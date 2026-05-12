@@ -179,7 +179,6 @@
                 <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业方式</th>
                 <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划作业面积(亩)</th>
                 <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划作业设备/农机</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">执行状态</th>
                 <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业负责人</th>
                 <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业执行人</th>
                 <th class="px-3 py-2 text-left font-medium whitespace-nowrap">备注</th>
@@ -201,12 +200,6 @@
                 <td class="px-3 py-2">{{ row.workMethod }}</td>
                 <td class="px-3 py-2">{{ row.planArea }}</td>
                 <td class="px-3 py-2">{{ row.planEquipment || '-' }}</td>
-                <td class="px-3 py-2">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                    :class="execStatusBadge(row.execStatus)">
-                    {{ execStatusLabel(row.execStatus) }}
-                  </span>
-                </td>
                 <td class="px-3 py-2">{{ row.workLeader }}</td>
                 <td class="px-3 py-2">{{ row.workExecutor }}</td>
                 <td class="px-3 py-2">{{ row.remark || '-' }}</td>
