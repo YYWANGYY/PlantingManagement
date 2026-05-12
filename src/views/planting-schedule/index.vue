@@ -686,11 +686,6 @@ function closeSchemeDialog(): void {
 
 // ==================== 任务下发 ====================
 function handleIssueTask(item: ScheduleItem): void {
-  const idx = allItems.value.findIndex(i => i.id === item.id)
-  if (idx !== -1) {
-    allItems.value[idx].progressStatus = 'executing'
-    allItems.value[idx].planProgress = 10
-    showToast({ message: `计划「${item.planName}」任务已下发，进度状态更新为"执行中"`, type: 'success' })
-  }
+  router.push(`/planting-schedule/detail/${item.id}`)
 }
 </script>

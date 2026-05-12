@@ -42,6 +42,11 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '计划监控', parent: '种植计划' },
       },
       {
+        path: 'planting-schedule/detail/:id',
+        component: () => import('@/views/planting-schedule/detail.vue'),
+        meta: { title: '任务下发详情', parent: '种植计划' },
+      },
+      {
         path: 'material-demand',
         component: () => import('@/views/material-demand/index.vue'),
         meta: { title: '需求计划', parent: '农资需求' },
