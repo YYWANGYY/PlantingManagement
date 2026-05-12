@@ -157,7 +157,7 @@
             </thead>
             <tbody>
               <tr
-                v-for="(row, idx) in materialItems"
+                v-for="{ item: row, realIndex: idx } in paginatedItems"
                 :key="idx"
                 class="border-b transition-colors hover:bg-muted/30"
               >
@@ -210,6 +210,40 @@
             </tbody>
           </table>
         </div>
+
+        <!-- 分页 -->
+        <div class="flex items-center justify-between border-t px-4 py-3">
+          <p class="text-sm text-muted-foreground">
+            共 {{ materialItems.length }} 条，每页 {{ pageSize }} 条
+          </p>
+          <div class="flex items-center gap-1">
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="currentPage <= 1"
+              @click="currentPage--"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </button>
+            <template v-for="p in visiblePages" :key="p">
+              <span v-if="p === '...'" class="inline-flex h-8 w-8 items-center justify-center text-sm text-muted-foreground">...</span>
+              <button
+                v-else
+                class="inline-flex h-8 w-8 items-center justify-center rounded text-sm transition-colors"
+                :class="currentPage === p ? 'bg-primary text-primary-foreground font-medium' : 'hover:bg-muted'"
+                @click="currentPage = p as number"
+              >
+                {{ p }}
+              </button>
+            </template>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+              :disabled="currentPage >= totalPages"
+              @click="currentPage++"
+            >
+              <ChevronRight class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 农资汇总 -->
@@ -234,7 +268,7 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -308,18 +342,76 @@ interface MaterialItem {
 // 编辑校验错误信息
 const editingErrors = reactive<Record<number, string>>({})
 
+// 计算缺口量：需求总量 - 现有库存量，最小为0
+function calcGap(totalDemand: number, currentStock: number): number {
+  return Math.max(0, totalDemand - currentStock)
+}
+
 const materialItems = ref<MaterialItem[]>([
-  { growthStage: '播种期', process: '整地播种', workStage: '播种', category: '种子', type: '杂交水稻种', ingredient: 'Y两优900', unit: 'kg', standardDosage: 2, planArea: 500, totalDemand: 1000, originalTotalDemand: 1000, applicationMethod: '机械直播', currentStock: 400, inTransit: 200, gap: 400, reserved: false, planPrice: 45.0 },
-  { growthStage: '播种期', process: '整地播种', workStage: '施肥', category: '肥料', type: '复合肥', ingredient: 'NPK 15-15-15', unit: 'kg', standardDosage: 40, planArea: 500, totalDemand: 20000, originalTotalDemand: 20000, applicationMethod: '撒施', currentStock: 12000, inTransit: 3000, gap: 5000, reserved: true, planPrice: 3.2 },
-  { growthStage: '播种期', process: '整地播种', workStage: '施肥', category: '肥料', type: '有机肥', ingredient: '腐熟农家肥', unit: 'kg', standardDosage: 2000, planArea: 500, totalDemand: 1000000, originalTotalDemand: 1000000, applicationMethod: '基肥深施', currentStock: 800000, inTransit: 0, gap: 200000, reserved: false, planPrice: 0.8 },
-  { growthStage: '分蘖期', process: '田间管理', workStage: '施肥', category: '肥料', type: '尿素', ingredient: 'N 46%', unit: 'kg', standardDosage: 15, planArea: 500, totalDemand: 7500, originalTotalDemand: 7500, applicationMethod: '追施', currentStock: 5000, inTransit: 0, gap: 2500, reserved: false, planPrice: 2.8 },
-  { growthStage: '分蘖期', process: '田间管理', workStage: '植保', category: '农药', type: '杀虫剂', ingredient: '阿维菌素 1.8%EC', unit: 'ml', standardDosage: 50, planArea: 500, totalDemand: 25000, originalTotalDemand: 25000, applicationMethod: '喷雾', currentStock: 18000, inTransit: 5000, gap: 2000, reserved: true, planPrice: 0.15 },
+  { growthStage: '播种期', process: '整地播种', workStage: '播种', category: '种子', type: '杂交水稻种', ingredient: 'Y两优900', unit: 'kg', standardDosage: 2, planArea: 500, totalDemand: 1000, originalTotalDemand: 1000, applicationMethod: '机械直播', currentStock: 400, inTransit: 200, gap: 0, reserved: false, planPrice: 45.0 },
+  { growthStage: '播种期', process: '整地播种', workStage: '施肥', category: '肥料', type: '复合肥', ingredient: 'NPK 15-15-15', unit: 'kg', standardDosage: 40, planArea: 500, totalDemand: 20000, originalTotalDemand: 20000, applicationMethod: '撒施', currentStock: 12000, inTransit: 3000, gap: 0, reserved: true, planPrice: 3.2 },
+  { growthStage: '播种期', process: '整地播种', workStage: '施肥', category: '肥料', type: '有机肥', ingredient: '腐熟农家肥', unit: 'kg', standardDosage: 2000, planArea: 500, totalDemand: 1000000, originalTotalDemand: 1000000, applicationMethod: '基肥深施', currentStock: 800000, inTransit: 0, gap: 0, reserved: false, planPrice: 0.8 },
+  { growthStage: '分蘖期', process: '田间管理', workStage: '施肥', category: '肥料', type: '尿素', ingredient: 'N 46%', unit: 'kg', standardDosage: 15, planArea: 500, totalDemand: 7500, originalTotalDemand: 7500, applicationMethod: '追施', currentStock: 5000, inTransit: 0, gap: 0, reserved: false, planPrice: 2.8 },
+  { growthStage: '分蘖期', process: '田间管理', workStage: '植保', category: '农药', type: '杀虫剂', ingredient: '阿维菌素 1.8%EC', unit: 'ml', standardDosage: 50, planArea: 500, totalDemand: 25000, originalTotalDemand: 25000, applicationMethod: '喷雾', currentStock: 18000, inTransit: 5000, gap: 0, reserved: true, planPrice: 0.15 },
   { growthStage: '拔节期', process: '田间管理', workStage: '施肥', category: '肥料', type: '钾肥', ingredient: 'K₂O 60%', unit: 'kg', standardDosage: 10, planArea: 500, totalDemand: 5000, originalTotalDemand: 5000, applicationMethod: '撒施', currentStock: 5000, inTransit: 0, gap: 0, reserved: true, planPrice: 4.5 },
-  { growthStage: '拔节期', process: '田间管理', workStage: '植保', category: '农药', type: '杀菌剂', ingredient: '井冈霉素 5%WP', unit: 'g', standardDosage: 100, planArea: 500, totalDemand: 50000, originalTotalDemand: 50000, applicationMethod: '喷雾', currentStock: 30000, inTransit: 10000, gap: 10000, reserved: false, planPrice: 0.08 },
+  { growthStage: '拔节期', process: '田间管理', workStage: '植保', category: '农药', type: '杀菌剂', ingredient: '井冈霉素 5%WP', unit: 'g', standardDosage: 100, planArea: 500, totalDemand: 50000, originalTotalDemand: 50000, applicationMethod: '喷雾', currentStock: 30000, inTransit: 10000, gap: 0, reserved: false, planPrice: 0.08 },
   { growthStage: '抽穗期', process: '田间管理', workStage: '植保', category: '农药', type: '杀菌剂', ingredient: '三环唑 75%WP', unit: 'g', standardDosage: 30, planArea: 500, totalDemand: 15000, originalTotalDemand: 15000, applicationMethod: '喷雾', currentStock: 15000, inTransit: 0, gap: 0, reserved: true, planPrice: 0.25 },
   { growthStage: '灌浆期', process: '田间管理', workStage: '灌溉', category: '农具', type: '灌溉设备', ingredient: '水泵+管道', unit: '套', standardDosage: 1, planArea: 500, totalDemand: 5, originalTotalDemand: 5, applicationMethod: '浅水灌溉', currentStock: 5, inTransit: 0, gap: 0, reserved: true, planPrice: 2800.0 },
   { growthStage: '成熟期', process: '收获', workStage: '收获', category: '农具', type: '收割机', ingredient: '联合收割机', unit: '台', standardDosage: 1, planArea: 500, totalDemand: 3, originalTotalDemand: 3, applicationMethod: '机械收割', currentStock: 3, inTransit: 0, gap: 0, reserved: true, planPrice: 15000.0 },
+  { growthStage: '分蘖期', process: '田间管理', workStage: '植保', category: '农药', type: '除草剂', ingredient: '苄嘧磺隆 10%WP', unit: 'g', standardDosage: 30, planArea: 500, totalDemand: 15000, originalTotalDemand: 15000, applicationMethod: '喷雾', currentStock: 8000, inTransit: 2000, gap: 0, reserved: false, planPrice: 0.12 },
+  { growthStage: '拔节期', process: '田间管理', workStage: '施肥', category: '肥料', type: '磷肥', ingredient: 'P₂O₅ 18%', unit: 'kg', standardDosage: 20, planArea: 500, totalDemand: 10000, originalTotalDemand: 10000, applicationMethod: '撒施', currentStock: 6000, inTransit: 0, gap: 0, reserved: false, planPrice: 3.5 },
+  { growthStage: '抽穗期', process: '田间管理', workStage: '施肥', category: '肥料', type: '叶面肥', ingredient: '磷酸二氢钾', unit: 'kg', standardDosage: 2, planArea: 500, totalDemand: 1000, originalTotalDemand: 1000, applicationMethod: '喷施', currentStock: 500, inTransit: 0, gap: 0, reserved: true, planPrice: 12.0 },
+  { growthStage: '灌浆期', process: '田间管理', workStage: '植保', category: '农药', type: '杀虫剂', ingredient: '吡蚜酮 50%WP', unit: 'g', standardDosage: 20, planArea: 500, totalDemand: 10000, originalTotalDemand: 10000, applicationMethod: '喷雾', currentStock: 6000, inTransit: 1000, gap: 0, reserved: false, planPrice: 0.35 },
+  { growthStage: '成熟期', process: '收获', workStage: '烘干', category: '农具', type: '烘干设备', ingredient: '循环式烘干机', unit: '台', standardDosage: 1, planArea: 500, totalDemand: 2, originalTotalDemand: 2, applicationMethod: '烘干', currentStock: 1, inTransit: 0, gap: 0, reserved: true, planPrice: 12000.0 },
+  { growthStage: '播种期', process: '整地播种', workStage: '整地', category: '农具', type: '旋耕机', ingredient: '旋耕机', unit: '台', standardDosage: 1, planArea: 500, totalDemand: 2, originalTotalDemand: 2, applicationMethod: '旋耕', currentStock: 2, inTransit: 0, gap: 0, reserved: true, planPrice: 8500.0 },
+  { growthStage: '分蘖期', process: '田间管理', workStage: '灌溉', category: '农具', type: '输水管道', ingredient: 'PE管', unit: 'm', standardDosage: 50, planArea: 500, totalDemand: 25000, originalTotalDemand: 25000, applicationMethod: '渠灌', currentStock: 20000, inTransit: 0, gap: 0, reserved: false, planPrice: 1.5 },
+  { growthStage: '拔节期', process: '田间管理', workStage: '植保', category: '农药', type: '杀虫剂', ingredient: '噻虫嗪 25%WG', unit: 'g', standardDosage: 15, planArea: 500, totalDemand: 7500, originalTotalDemand: 7500, applicationMethod: '喷雾', currentStock: 3000, inTransit: 0, gap: 0, reserved: false, planPrice: 0.28 },
+  { growthStage: '抽穗期', process: '田间管理', workStage: '植保', category: '农药', type: '杀菌剂', ingredient: '嘧菌酯 25%SC', unit: 'ml', standardDosage: 40, planArea: 500, totalDemand: 20000, originalTotalDemand: 20000, applicationMethod: '喷雾', currentStock: 15000, inTransit: 3000, gap: 0, reserved: true, planPrice: 0.42 },
+  { growthStage: '灌浆期', process: '田间管理', workStage: '施肥', category: '肥料', type: '叶面肥', ingredient: '硼肥', unit: 'kg', standardDosage: 0.5, planArea: 500, totalDemand: 250, originalTotalDemand: 250, applicationMethod: '喷施', currentStock: 100, inTransit: 0, gap: 0, reserved: false, planPrice: 18.0 },
+  { growthStage: '成熟期', process: '收获', workStage: '运输', category: '农具', type: '运输车', ingredient: '农用三轮车', unit: '辆', standardDosage: 1, planArea: 500, totalDemand: 5, originalTotalDemand: 5, applicationMethod: '运输', currentStock: 3, inTransit: 0, gap: 0, reserved: true, planPrice: 4500.0 },
+  { growthStage: '播种期', process: '整地播种', workStage: '浸种', category: '农药', type: '种子处理剂', ingredient: '咪鲜胺 25%EC', unit: 'ml', standardDosage: 5, planArea: 500, totalDemand: 2500, originalTotalDemand: 2500, applicationMethod: '浸种', currentStock: 1000, inTransit: 500, gap: 0, reserved: false, planPrice: 0.38 },
+  { growthStage: '分蘖期', process: '田间管理', workStage: '植保', category: '农药', type: '杀螺剂', ingredient: '四聚乙醛 6%GR', unit: 'kg', standardDosage: 2, planArea: 500, totalDemand: 1000, originalTotalDemand: 1000, applicationMethod: '撒施', currentStock: 500, inTransit: 0, gap: 0, reserved: false, planPrice: 8.5 },
+  { growthStage: '拔节期', process: '田间管理', workStage: '施肥', category: '肥料', type: '硅肥', ingredient: '硅钙肥', unit: 'kg', standardDosage: 15, planArea: 500, totalDemand: 7500, originalTotalDemand: 7500, applicationMethod: '撒施', currentStock: 4000, inTransit: 1000, gap: 0, reserved: false, planPrice: 2.2 },
+  { growthStage: '抽穗期', process: '田间管理', workStage: '施肥', category: '肥料', type: '锌肥', ingredient: '硫酸锌', unit: 'kg', standardDosage: 1, planArea: 500, totalDemand: 500, originalTotalDemand: 500, applicationMethod: '喷施', currentStock: 200, inTransit: 0, gap: 0, reserved: true, planPrice: 6.0 },
 ])
+
+// 初始化所有行的缺口量：需求总量 - 现有库存量
+materialItems.value.forEach(item => {
+  item.gap = calcGap(item.totalDemand, item.currentStock)
+})
+
+// 分页
+const currentPage = ref(1)
+const pageSize = 10
+
+const totalPages = computed(() => Math.ceil(materialItems.value.length / pageSize))
+
+const paginatedItems = computed(() => {
+  const start = (currentPage.value - 1) * pageSize
+  const end = start + pageSize
+  const result: { item: MaterialItem; realIndex: number }[] = []
+  for (let i = start; i < end && i < materialItems.value.length; i++) {
+    result.push({ item: materialItems.value[i], realIndex: i })
+  }
+  return result
+})
+
+// 分页：可见页码
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const pages: (number | string)[] = [1]
+  if (current > 3) pages.push('...')
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (current < total - 2) pages.push('...')
+  pages.push(total)
+  return pages
+})
 
 const totalBudget = computed(() => {
   return (materialItems.value.reduce((sum, i) => sum + i.totalDemand * i.planPrice, 0) / 10000).toFixed(2)
@@ -368,7 +460,7 @@ function onDemandChange(idx: number, value: string) {
   delete editingErrors[idx]
   item.totalDemand = num
   // 重新计算缺口量：需求总量 - 现有库存，最小为0
-  item.gap = Math.max(0, num - item.currentStock)
+  item.gap = calcGap(num, item.currentStock)
 }
 
 function onDemandBlur(idx: number, value: string) {
@@ -378,7 +470,7 @@ function onDemandBlur(idx: number, value: string) {
   // 失焦时如果值无效，恢复为原始值
   if (trimmed === '' || isNaN(Number(trimmed)) || Number(trimmed) < item.originalTotalDemand) {
     item.totalDemand = item.originalTotalDemand
-    item.gap = Math.max(0, item.originalTotalDemand - item.currentStock)
+    item.gap = calcGap(item.originalTotalDemand, item.currentStock)
     delete editingErrors[idx]
   }
 }
