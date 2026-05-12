@@ -212,15 +212,30 @@
                 </span>
               </td>
               <td class="h-12 px-4 text-center">
-                <button
-                  v-if="item.progressStatus === 'pending_issue'"
-                  class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-                  @click="handleIssueTask(item)"
-                >
-                  任务下发
-                </button>
-                <span v-else class="text-sm text-muted-foreground">-</span>
-              </td>
+                  <div class="flex items-center justify-center gap-3">
+                    <button
+                      v-if="item.progressStatus === 'pending_issue'"
+                      class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      @click="handleIssueTask(item)"
+                    >
+                      任务下发
+                    </button>
+                    <button
+                      v-if="item.progressStatus === 'all_done'"
+                      class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      @click="handleArchive(item)"
+                    >
+                      归档
+                    </button>
+                    <button
+                      v-if="['archived', 'all_done', 'executing', 'partial_done'].includes(item.progressStatus)"
+                      class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      @click="handleView(item)"
+                    >
+                      查看
+                    </button>
+                  </div>
+                </td>
             </tr>
             <tr v-if="filteredItems.length === 0">
               <td colspan="14" class="h-24 text-center text-muted-foreground">暂无数据</td>
@@ -352,6 +367,71 @@
         >
           确认引用
         </button>
+      </div>
+    </div>
+
+    <!-- 归档弹框 -->
+    <div v-if="archiveDialogVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="archiveDialogVisible = false">
+      <div class="w-[520px] rounded-lg bg-background shadow-xl" @click.stop>
+        <div class="flex items-center justify-between border-b px-6 py-4">
+          <h3 class="text-lg font-semibold">归档</h3>
+          <button class="text-muted-foreground hover:text-foreground" @click="archiveDialogVisible = false">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <div class="space-y-4 px-6 py-5">
+          <div>
+            <label class="mb-1.5 block text-sm font-medium">归档描述 <span class="text-destructive">*</span></label>
+            <textarea
+              v-model="archiveForm.description"
+              class="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 min-h-[80px] resize-y"
+              placeholder="请输入归档描述"
+            ></textarea>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium">归档时间 <span class="text-destructive">*</span></label>
+            <input
+              v-model="archiveForm.time"
+              type="datetime-local"
+              class="w-full rounded-md border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium">附件</label>
+            <div class="flex items-center gap-2">
+              <button
+                class="rounded-md border border-dashed px-4 py-2 text-sm text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                @click="archiveForm.attachments.push(`附件${archiveForm.attachments.length + 1}.pdf`)"
+              >
+                + 选择文件
+              </button>
+              <span class="text-xs text-muted-foreground">支持 PDF、Word、Excel 格式</span>
+            </div>
+            <div v-if="archiveForm.attachments.length > 0" class="mt-2 space-y-1">
+              <div v-for="(file, idx) in archiveForm.attachments" :key="idx" class="flex items-center justify-between rounded bg-muted px-3 py-1.5 text-sm">
+                <span>{{ file }}</span>
+                <button class="text-muted-foreground hover:text-destructive" @click="archiveForm.attachments.splice(idx, 1)">
+                  <X class="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-end gap-3 border-t px-6 py-4">
+          <button
+            class="rounded-md border bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
+            @click="archiveDialogVisible = false"
+          >
+            取消
+          </button>
+          <button
+            class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="!archiveForm.description || !archiveForm.time"
+            @click="confirmArchive"
+          >
+            确认归档
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -682,6 +762,46 @@ function closeSchemeDialog(): void {
   showSchemeDialog.value = false
   schemeSearch.value = ''
   selectedSchemeId.value = ''
+}
+
+// ==================== 归档 ====================
+const archiveDialogVisible = ref(false)
+const archiveItem = ref<ScheduleItem | null>(null)
+const archiveForm = ref({
+  description: '',
+  time: '',
+  attachments: [] as string[],
+})
+
+function handleArchive(item: ScheduleItem): void {
+  archiveItem.value = item
+  archiveForm.value = { description: '', time: '', attachments: [] }
+  archiveDialogVisible.value = true
+}
+
+function confirmArchive(): void {
+  if (!archiveForm.value.time) {
+    showToast({ message: '请选择归档时间', type: 'warning' })
+    return
+  }
+  if (archiveItem.value) {
+    const idx = allItems.value.findIndex(i => i.id === archiveItem.value!.id)
+    if (idx !== -1) {
+      allItems.value[idx].progressStatus = 'archived'
+    }
+  }
+  archiveDialogVisible.value = false
+  showToast({ message: '归档成功', type: 'success' })
+}
+
+function closeArchiveDialog(): void {
+  archiveDialogVisible.value = false
+  archiveItem.value = null
+}
+
+// ==================== 查看详情 ====================
+function handleView(item: ScheduleItem): void {
+  router.push(`/planting-schedule/view/${item.id}`)
 }
 
 // ==================== 任务下发 ====================
