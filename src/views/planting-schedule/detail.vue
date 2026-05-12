@@ -260,18 +260,16 @@
           </table>
         </div>
       </div>
-    </div>
 
-    <!-- Tab 2: 农事任务（列表只读 + 批量下发） -->
-    <div v-if="activeTab === 'task'" class="space-y-4">
-      <div class="flex items-center justify-between">
-        <p class="text-sm text-muted-foreground">
-          共 {{ taskList.length }} 条农事任务（与种植作业执行计划明细表一一对应）
-        </p>
-        <div class="flex items-center gap-2">
-          <span v-if="selectedTaskCodes.size > 0" class="text-sm text-muted-foreground">
+      <!-- 分页 + 批量操作 -->
+      <div class="flex items-center justify-between px-4 py-3 border-t rounded-b-lg bg-background">
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-muted-foreground">共 {{ taskList.length }} 条</span>
+          <span v-if="selectedTaskCodes.size > 0" class="text-sm text-primary font-medium">
             已选 {{ selectedTaskCodes.size }} 条
           </span>
+        </div>
+        <div class="flex items-center gap-2">
           <button
             :disabled="selectedTaskCodes.size === 0"
             class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -280,7 +278,57 @@
             <Send class="h-4 w-4" />
             批量下发
           </button>
+          <div class="flex items-center gap-1">
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === 1"
+              @click="taskCurrentPage = 1"
+            >
+              <ChevronsLeft class="h-4 w-4" />
+            </button>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === 1"
+              @click="taskCurrentPage--"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </button>
+            <template v-for="page in taskVisiblePages" :key="page">
+              <span v-if="page === '...'" class="px-1 text-sm text-muted-foreground">...</span>
+              <button
+                v-else
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm"
+                :class="taskCurrentPage === page ? 'bg-primary text-primary-foreground border-primary' : ''"
+                @click="taskCurrentPage = page as number"
+              >
+                {{ page }}
+              </button>
+            </template>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === taskTotalPages"
+              @click="taskCurrentPage++"
+            >
+              <ChevronRight class="h-4 w-4" />
+            </button>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === taskTotalPages"
+              @click="taskCurrentPage = taskTotalPages"
+            >
+              <ChevronsRight class="h-4 w-4" />
+            </button>
+          </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: 农事任务（列表只读 + 批量下发） -->
+    <div v-if="activeTab === 'task'" class="space-y-4">
+      <div class="flex items-center justify-between">
+        <p class="text-sm text-muted-foreground">
+          共 {{ taskList.length }} 条农事任务（与种植作业执行计划明细表一一对应）
+        </p>
       </div>
 
       <!-- 任务列表（表格） -->
@@ -323,7 +371,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(task, tIdx) in taskList" :key="tIdx" class="border-b hover:bg-muted/10">
+              <tr v-for="(task, tIdx) in paginatedTasks" :key="tIdx" class="border-b hover:bg-muted/10">
                 <td class="px-3 py-2">
                   <input
                     v-if="task.taskStatus === 'pending'"
@@ -333,7 +381,7 @@
                     @change="toggleSelect(task.taskCode)"
                   />
                 </td>
-                <td class="px-3 py-2">{{ tIdx + 1 }}</td>
+                <td class="px-3 py-2">{{ (taskCurrentPage - 1) * taskPageSize + tIdx + 1 }}</td>
                 <td class="px-3 py-2 font-mono text-xs">{{ task.taskCode }}</td>
                 <td class="px-3 py-2">{{ task.plotName || '-' }}</td>
                 <td class="px-3 py-2">{{ task.plotType || '-' }}</td>
@@ -424,9 +472,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Send } from 'lucide-vue-next'
+import { ArrowLeft, Send, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
 
 const route = useRoute()
@@ -569,6 +617,29 @@ const dispatchTargets = [
   { value: 'facility', label: '设施系统', desc: '适用于设施种植的环境管控与设备作业任务' },
   { value: 'manual', label: '本系统（人工作业）', desc: '适用于人工作业任务，在本系统中进行任务派发与跟踪' },
 ]
+
+// ==================== 任务分页 ====================
+const taskCurrentPage = ref(1)
+const taskPageSize = 10
+const taskTotalPages = computed(() => Math.max(1, Math.ceil(taskList.value.length / taskPageSize)))
+const paginatedTasks = computed(() => {
+  const start = (taskCurrentPage.value - 1) * taskPageSize
+  return taskList.value.slice(start, start + taskPageSize)
+})
+const taskVisiblePages = computed(() => {
+  const total = taskTotalPages.value
+  const current = taskCurrentPage.value
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  const pages: (number | string)[] = [1]
+  if (current > 3) pages.push('...')
+  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i)
+  if (current < total - 2) pages.push('...')
+  pages.push(total)
+  return pages
+})
+
+// 监听任务列表变化重置页码
+watch(taskList, () => { taskCurrentPage.value = 1 })
 
 const isAllSelected = computed(() => {
   const pendingTasks = taskList.value.filter(t => t.taskStatus === 'pending')
@@ -753,10 +824,17 @@ function loadMockData(): void {
     { growthStage: '播种期', productionProcess: '春耕', workStep: '播种作业', coreStandard: '播种均匀，播深3-5cm', planStartTime: '2025-03-06', planEndTime: '2025-03-12', workParamReq: '行距20cm，播深3-5cm', workMethod: '农机作业', planArea: 1000, planEquipment: '播种机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
     { growthStage: '出苗期', productionProcess: '田间管理', workStep: '查苗补苗作业', coreStandard: '缺苗率≤3%', planStartTime: '2025-03-20', planEndTime: '2025-03-25', workParamReq: '补苗密度与原播一致', workMethod: '人工作业', planArea: 1000, planEquipment: '', execStatus: 'pending', workLeader: '张三', workExecutor: '王五', remark: '' },
     { growthStage: '返青期', productionProcess: '追肥', workStep: '追肥作业', coreStandard: '追施返青肥，亩施尿素10kg', planStartTime: '2025-04-01', planEndTime: '2025-04-05', workParamReq: '亩施尿素10-12kg', workMethod: '农机作业', planArea: 1000, planEquipment: '施肥机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
+    { growthStage: '返青期', productionProcess: '田间管理', workStep: '中耕除草作业', coreStandard: '除草率≥90%，不伤苗', planStartTime: '2025-04-06', planEndTime: '2025-04-10', workParamReq: '行间除草，深度5-8cm', workMethod: '农机作业', planArea: 1000, planEquipment: '中耕机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
     { growthStage: '拔节期', productionProcess: '田间管理', workStep: '病虫害防治作业', coreStandard: '蚜虫防治，吡虫啉喷施', planStartTime: '2025-04-15', planEndTime: '2025-04-20', workParamReq: '吡虫啉1500倍液喷雾', workMethod: '无人机作业', planArea: 1000, planEquipment: '植保无人机', execStatus: 'pending', workLeader: '张三', workExecutor: '赵六', remark: '用药类操作' },
+    { growthStage: '拔节期', productionProcess: '追肥', workStep: '拔节肥追施作业', coreStandard: '亩施尿素8kg，促进拔节', planStartTime: '2025-04-21', planEndTime: '2025-04-25', workParamReq: '亩施尿素8-10kg', workMethod: '农机作业', planArea: 1000, planEquipment: '施肥机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
     { growthStage: '抽穗期', productionProcess: '田间管理', workStep: '灌溉作业', coreStandard: '保证抽穗期水分充足', planStartTime: '2025-05-01', planEndTime: '2025-05-05', workParamReq: '灌水量50m³/亩', workMethod: '智能设备', planArea: 1000, planEquipment: '灌溉系统', execStatus: 'pending', workLeader: '张三', workExecutor: '孙七', remark: '' },
+    { growthStage: '抽穗期', productionProcess: '田间管理', workStep: '赤霉病防治作业', coreStandard: '赤霉病预防，多菌灵喷施', planStartTime: '2025-05-06', planEndTime: '2025-05-10', workParamReq: '多菌灵800倍液喷雾', workMethod: '无人机作业', planArea: 1000, planEquipment: '植保无人机', execStatus: 'pending', workLeader: '张三', workExecutor: '赵六', remark: '用药类操作' },
     { growthStage: '灌浆期', productionProcess: '田间管理', workStep: '叶面喷肥作业', coreStandard: '磷酸二氢钾叶面喷施', planStartTime: '2025-05-15', planEndTime: '2025-05-18', workParamReq: '0.3%浓度叶面喷施', workMethod: '无人机作业', planArea: 1000, planEquipment: '植保无人机', execStatus: 'pending', workLeader: '张三', workExecutor: '赵六', remark: '' },
-    { growthStage: '成熟期', productionProcess: '收获', workStep: '收割作业', coreStandard: '适时收获，减损率≤3%', planStartTime: '2025-07-01', planEndTime: '2025-07-15', workParamReq: '含水率≤14%', workMethod: '农机作业', planArea: 1000, planEquipment: '收割机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
+    { growthStage: '灌浆期', productionProcess: '田间管理', workStep: '穗期虫害防治作业', coreStandard: '穗蚜防治，高效氯氟氰菊酯', planStartTime: '2025-05-20', planEndTime: '2025-05-25', workParamReq: '高效氯氟氰菊酯1000倍液', workMethod: '无人机作业', planArea: 1000, planEquipment: '植保无人机', execStatus: 'pending', workLeader: '张三', workExecutor: '赵六', remark: '用药类操作' },
+    { growthStage: '成熟期', productionProcess: '田间管理', workStep: '田间排水作业', coreStandard: '成熟期及时排水，防止穗发芽', planStartTime: '2025-06-20', planEndTime: '2025-06-25', workParamReq: '排干田间积水', workMethod: '人工作业', planArea: 1000, planEquipment: '', execStatus: 'pending', workLeader: '张三', workExecutor: '王五', remark: '' },
+    { growthStage: '成熟期', productionProcess: '收获', workStep: '收割作业', coreStandard: '适时收获，减损率≤3%', planStartTime: '2025-07-01', planEndTime: '2025-07-05', workParamReq: '含水率≤14%', workMethod: '农机作业', planArea: 1000, planEquipment: '收割机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
+    { growthStage: '成熟期', productionProcess: '收获', workStep: '烘干入库作业', coreStandard: '烘干至含水率≤13%', planStartTime: '2025-07-06', planEndTime: '2025-07-10', workParamReq: '烘干温度50-55℃，含水率≤13%', workMethod: '智能设备', planArea: 1000, planEquipment: '烘干设备', execStatus: 'pending', workLeader: '张三', workExecutor: '孙七', remark: '' },
+    { growthStage: '成熟期', productionProcess: '收获', workStep: '秸秆还田作业', coreStandard: '秸秆粉碎还田，提升土壤有机质', planStartTime: '2025-07-11', planEndTime: '2025-07-15', workParamReq: '秸秆粉碎长度≤10cm', workMethod: '农机作业', planArea: 1000, planEquipment: '秸秆还田机', execStatus: 'pending', workLeader: '张三', workExecutor: '李四', remark: '' },
   ]
 
   // 模拟农资投入计划
@@ -777,8 +855,15 @@ function loadMockData(): void {
     { name: '通州地块C-01', type: '大田', area: 200 },
     { name: '通州地块C-02', type: '大田', area: 150 },
     { name: '唐山地块D-01', type: '大田', area: 100 },
-    { name: '良乡地块A-01', type: '大田', area: 300 },
-    { name: '良乡地块A-02', type: '大田', area: 250 },
+    { name: '良乡地块A-03', type: '大田', area: 180 },
+    { name: '良乡地块B-02', type: '大田', area: 220 },
+    { name: '通州地块C-03', type: '大田', area: 160 },
+    { name: '唐山地块D-02', type: '大田', area: 140 },
+    { name: '良乡地块A-04', type: '大田', area: 190 },
+    { name: '通州地块C-04', type: '大田', area: 170 },
+    { name: '良乡地块B-03', type: '大田', area: 210 },
+    { name: '唐山地块D-03', type: '大田', area: 130 },
+    { name: '良乡地块A-05', type: '大田', area: 200 },
   ]
 
   taskList.value = farmingList.value.map((row, idx) => ({
