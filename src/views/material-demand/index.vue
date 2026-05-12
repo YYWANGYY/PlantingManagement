@@ -29,7 +29,7 @@
         </div>
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium text-muted-foreground">所属单位</label>
-          <div class="relative" ref="queryUnitRef">
+          <div class="relative unit-tree-dropdown">
             <button
               type="button"
               class="flex h-9 min-w-[200px] items-center justify-between rounded-md border bg-background px-3 text-sm hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -39,61 +39,33 @@
               <span class="truncate">{{ queryUnit || '全部' }}</span>
               <ChevronDownIcon class="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </button>
-            <div v-if="queryUnitOpen" class="absolute left-0 top-full z-50 mt-1 max-h-80 w-80 overflow-auto rounded-md border bg-popover shadow-lg">
+            <div v-if="queryUnitOpen" class="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] overflow-auto rounded-md border bg-card shadow-lg">
               <div class="p-2">
-                <button
-                  class="w-full rounded px-3 py-1.5 text-left text-sm hover:bg-primary/10"
+                <div
+                  class="cursor-pointer rounded px-2 py-1.5 text-sm hover:bg-muted"
                   :class="queryUnit === '' ? 'bg-primary/10 font-medium text-primary' : ''"
                   @click="queryUnit = ''; queryUnitOpen = false"
-                >全部</button>
-                <template v-for="l1 in orgTree" :key="l1.label">
-                  <div class="mt-1">
-                    <div class="flex items-center gap-1">
-                      <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded hover:bg-primary/10" @click="toggleOrgNode(l1.label)">
-                        <component :is="expandedOrgNodes.has(l1.label) ? ChevronDownIcon : ChevronRightIcon" class="h-3.5 w-3.5" />
-                      </button>
-                      <button class="flex flex-1 items-center gap-1 rounded px-2 py-1.5 text-left text-sm font-medium hover:bg-primary/10" :class="queryUnit === l1.label ? 'bg-primary/10 text-primary' : ''" @click="queryUnit = l1.label; queryUnitOpen = false">
-                        <Building2Icon class="h-3.5 w-3.5 shrink-0 text-primary" />
-                        <span class="truncate">{{ l1.label }}</span>
-                      </button>
-                    </div>
-                    <div v-if="expandedOrgNodes.has(l1.label)" class="ml-4">
-                      <template v-for="l2 in l1.children" :key="l2.label">
-                        <div class="flex items-center gap-1">
-                          <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded hover:bg-primary/10" @click="toggleOrgNode(l1.label + '.' + l2.label)">
-                            <component :is="expandedOrgNodes.has(l1.label + '.' + l2.label) ? ChevronDownIcon : ChevronRightIcon" class="h-3.5 w-3.5" />
-                          </button>
-                          <button class="flex flex-1 items-center gap-1 rounded px-2 py-1.5 text-left text-sm hover:bg-primary/10" :class="queryUnit === l2.label ? 'bg-primary/10 text-primary' : ''" @click="queryUnit = l2.label; queryUnitOpen = false">
-                            <Building2Icon class="h-3.5 w-3.5 shrink-0 text-amber-500" />
-                            <span class="truncate">{{ l2.label }}</span>
-                          </button>
-                        </div>
-                        <div v-if="expandedOrgNodes.has(l1.label + '.' + l2.label)" class="ml-4">
-                          <template v-for="l3 in l2.children" :key="l3.label">
-                            <div class="flex items-center gap-1">
-                              <button class="flex h-7 w-7 shrink-0 items-center justify-center rounded hover:bg-primary/10" @click="toggleOrgNode(l1.label + '.' + l2.label + '.' + l3.label)">
-                                <component :is="expandedOrgNodes.has(l1.label + '.' + l2.label + '.' + l3.label) ? ChevronDownIcon : ChevronRightIcon" class="h-3.5 w-3.5" />
-                              </button>
-                              <button class="flex flex-1 items-center gap-1 rounded px-2 py-1.5 text-left text-sm hover:bg-primary/10" :class="queryUnit === l3.label ? 'bg-primary/10 text-primary' : ''" @click="queryUnit = l3.label; queryUnitOpen = false">
-                                <Building2Icon class="h-3.5 w-3.5 shrink-0 text-green-600" />
-                                <span class="truncate">{{ l3.label }}</span>
-                              </button>
-                            </div>
-                            <div v-if="expandedOrgNodes.has(l1.label + '.' + l2.label + '.' + l3.label)" class="ml-4">
-                              <button
-                                v-for="l4 in l3.children" :key="l4.label"
-                                class="flex w-full items-center gap-1 rounded px-3 py-1.5 text-left text-sm hover:bg-primary/10"
-                                :class="queryUnit === l4.label ? 'bg-primary/10 font-medium text-primary' : ''"
-                                @click="queryUnit = l4.label; queryUnitOpen = false"
-                              >
-                                <span class="ml-1 truncate">{{ l4.label }}</span>
-                              </button>
-                            </div>
-                          </template>
-                        </div>
-                      </template>
-                    </div>
+                >全部</div>
+                <template v-for="org in orgTree" :key="org.label">
+                  <div
+                    class="cursor-pointer rounded px-2 py-1.5 text-sm font-medium hover:bg-muted flex items-center gap-1"
+                    @click.stop="toggleOrgNode(org.label)"
+                  >
+                    <ChevronRightIcon
+                      class="h-3.5 w-3.5 transition-transform shrink-0"
+                      :class="expandedOrgNodes.includes(org.label) ? 'rotate-90' : ''"
+                    />
+                    <span class="truncate" :class="queryUnit === org.label ? 'text-primary' : ''">{{ org.label }}</span>
                   </div>
+                  <template v-if="expandedOrgNodes.includes(org.label)">
+                    <div
+                      v-for="child in org.children"
+                      :key="child"
+                      class="cursor-pointer rounded py-1.5 pl-8 pr-2 text-sm hover:bg-muted"
+                      :class="queryUnit === child ? 'bg-primary/10 text-primary font-medium' : ''"
+                      @click="queryUnit = child; queryUnitOpen = false"
+                    >{{ child }}</div>
+                  </template>
                 </template>
               </div>
             </div>
@@ -231,30 +203,32 @@
       </div>
       <!-- 分页 -->
       <div class="flex items-center justify-between border-t px-4 py-3">
-        <p class="text-sm text-muted-foreground">共 {{ filteredList.length }} 条记录</p>
+        <p class="text-sm text-muted-foreground">第 {{ currentPage }} / {{ totalPages }} 页，共 {{ filteredList.length }} 条</p>
         <div class="flex items-center gap-1">
           <button
-            class="h-8 rounded border px-3 text-sm hover:bg-muted disabled:opacity-50"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="currentPage === 1"
             @click="currentPage--"
           >
-            上一页
+            <ChevronLeft class="h-4 w-4" />
           </button>
+          <template v-for="p in visiblePages" :key="p">
+            <button
+              v-if="p !== '...'"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors"
+              :class="p === currentPage ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted'"
+              @click="currentPage = p as number"
+            >
+              {{ p }}
+            </button>
+            <span v-else class="px-1 text-muted-foreground">...</span>
+          </template>
           <button
-            v-for="p in totalPages"
-            :key="p"
-            class="h-8 min-w-[32px] rounded border px-2 text-sm"
-            :class="p === currentPage ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'"
-            @click="currentPage = p"
-          >
-            {{ p }}
-          </button>
-          <button
-            class="h-8 rounded border px-3 text-sm hover:bg-muted disabled:opacity-50"
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
             :disabled="currentPage === totalPages"
             @click="currentPage++"
           >
-            下一页
+            <ChevronRightIcon class="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -267,7 +241,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { X, ChevronDown as ChevronDownIcon, ChevronRight as ChevronRightIcon, Building2 as Building2Icon, Download as DownloadIcon } from 'lucide-vue-next'
+import { ChevronDown as ChevronDownIcon, ChevronRight as ChevronRightIcon, ChevronLeft, Download as DownloadIcon } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
 
 const router = useRouter()
@@ -283,53 +257,35 @@ const pageSize = 10
 
 const yearOptions = ['2026', '2025', '2024', '2023', '2022']
 
-// 组织树数据
-interface OrgNode { label: string; children: OrgNode[] }
-const orgTree: OrgNode[] = [
-  { label: '中国融通农业发展集团有限公司', children: [
-    { label: '哈尔滨公司', children: [
-      { label: '华康农场', children: [
-        { label: '华山分场', children: [] },
-        { label: '雨林分场', children: [] },
-        { label: '康保分场', children: [] },
-      ]},
-      { label: '北安农场', children: [
-        { label: '红星分场', children: [] },
-        { label: '兴安分场', children: [] },
-        { label: '永丰分场', children: [] },
-      ]},
-      { label: '嫩江农场', children: [
-        { label: '合发分场', children: [] },
-        { label: '白云分场', children: [] },
-      ]},
-    ]},
-    { label: '沈阳公司', children: [
-      { label: '盘锦农场', children: [
-        { label: '兴城分场', children: [] },
-        { label: '红海滩分场', children: [] },
-      ]},
-      { label: '长春农场', children: [
-        { label: '九台分场', children: [] },
-        { label: '梅河口分场', children: [] },
-      ]},
-    ]},
-  ]}
+// 组织树数据（与种植方案一致的两级结构）
+const orgTree = [
+  {
+    label: '哈尔滨公司',
+    children: ['松北农场', '呼兰农场', '阿城农场', '双城分场', '五常分场']
+  },
+  {
+    label: '沈阳公司',
+    children: ['苏家屯农场', '新民农场', '辽中分场', '法库分场']
+  }
 ]
 
 const queryUnitOpen = ref(false)
-const queryUnitRef = ref<HTMLElement | null>(null)
-const expandedOrgNodes = ref<Set<string>>(new Set())
+const expandedOrgNodes = ref<string[]>([])
 
-function toggleOrgNode(key: string) {
-  const s = new Set(expandedOrgNodes.value)
-  if (s.has(key)) s.delete(key); else s.add(key)
-  expandedOrgNodes.value = s
+function toggleOrgNode(label: string) {
+  const idx = expandedOrgNodes.value.indexOf(label)
+  if (idx === -1) {
+    expandedOrgNodes.value.push(label)
+  } else {
+    expandedOrgNodes.value.splice(idx, 1)
+  }
 }
 
 // 点击外部关闭
 onMounted(() => {
   document.addEventListener('click', (e: MouseEvent) => {
-    if (queryUnitRef.value && !queryUnitRef.value.contains(e.target as Node)) {
+    const target = e.target as HTMLElement
+    if (!target.closest('.unit-tree-dropdown')) {
       queryUnitOpen.value = false
     }
   })
@@ -356,29 +312,56 @@ interface DemandPlan {
 }
 
 const demandPlans = ref<DemandPlan[]>([
-  { id: 'dp1', year: '2026', demandPlanId:'XQ2026-001',unit: '华康农场', subUnit: '华山分场', approvers: '张建国、李伟', planName: '华康农场2026年水稻种植计划', planCode: 'ZP2026-001', code: 'XQ2026-001', totalDemand: 1250, gap: 380, approvalStatus: '草稿', pushStatus: '未推送',executeStatus:'待执行', priority: '高', remark: '' },
-  { id: 'dp2', year: '2026',demandPlanId:'XQ2026-002', unit: '华康农场', subUnit: '雨林分场', approvers: '王志强、刘洋', planName: '华康农场2026年小麦种植计划', planCode: 'ZP2026-002', code: 'XQ2026-002', totalDemand: 860, gap: 120, approvalStatus: '审批中', pushStatus: '未推送', executeStatus:'待执行',priority: '中', remark: '' },
-  { id: 'dp3', year: '2026', demandPlanId:'XQ2026-003',unit: '北安农场', subUnit: '红星分场', approvers: '赵刚、孙磊', planName: '北安农场2026年玉米种植计划', planCode: 'ZP2026-003', code: 'XQ2026-003', totalDemand: 1580, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', executeStatus:'执行中',priority: '低', remark: '' },
-  { id: 'dp4', year: '2026',demandPlanId:'XQ2026-004', unit: '嫩江农场', subUnit: '合发分场', approvers: '陈红、马丽', planName: '嫩江农场2026年大豆种植计划', planCode: 'ZP2026-004', code: 'XQ2026-004', totalDemand: 620, gap: 250, approvalStatus: '已退回', pushStatus: '未推送', executeStatus:'待执行', priority: '高', remark: '退回原因：预算超标' },
-  { id: 'dp5', year: '2026',demandPlanId:'XQ2026-005', unit: '盘锦农场', subUnit: '兴城分场', approvers: '周立、吴芳', planName: '盘锦农场2026年水稻种植计划', planCode: 'ZP2026-005', code: 'XQ2026-005', totalDemand: 980, gap: 340, approvalStatus: '草稿', pushStatus: '未推送', executeStatus:'待执行',priority: '中', remark: '' },
-  { id: 'dp6', year: '2025',demandPlanId:'XQ2026-006', unit: '华康农场', subUnit: '康保分场', approvers: '张建国、李伟', planName: '华康农场2025年水稻种植计划', planCode: 'ZP2025-001', code: 'XQ2025-001', totalDemand: 1100, gap: 0, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'执行中',priority: '低', remark: '' },
-  { id: 'dp7', year: '2025', demandPlanId:'XQ2026-007',unit: '北安农场', subUnit: '兴安分场', approvers: '赵刚、孙磊', planName: '北安农场2025年玉米种植计划', planCode: 'ZP2025-002', code: 'XQ2025-002', totalDemand: 1400, gap: 0, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'已完成',priority: '低', remark: '' },
-  { id: 'dp8', year: '2026',demandPlanId:'XQ2026-008', unit: '长春农场', subUnit: '九台分场', approvers: '韩超、郑伟', planName: '长春农场2026年番茄种植计划', planCode: 'ZP2026-006', code: 'XQ2026-006', totalDemand: 420, gap: 180, approvalStatus: '审批中', pushStatus: '未推送', executeStatus:'待执行',priority: '高', remark: '' },
-  { id: 'dp9', year: '2026', demandPlanId:'XQ2026-009',unit: '华康农场', subUnit: '华山分场', approvers: '张建国、李伟', planName: '华康农场2026年花生种植计划', planCode: 'ZP2026-007', code: 'XQ2026-007', totalDemand: 530, gap: 90, approvalStatus: '已撤回', pushStatus: '未推送', executeStatus:'待执行',priority: '中', remark: '' },
-  { id: 'dp10', year: '2026', demandPlanId:'XQ2026-010',unit: '嫩江农场', subUnit: '白云分场', approvers: '陈红、马丽', planName: '嫩江农场2026年油菜种植计划', planCode: 'ZP2026-008', code: 'XQ2026-008', totalDemand: 380, gap: 0, approvalStatus: '强制结束', pushStatus: '未推送', executeStatus:'待执行',priority: '低', remark: '计划终止' },
-  { id: 'dp11', year: '2025', demandPlanId:'XQ2026-011',unit: '盘锦农场', subUnit: '红海滩分场', approvers: '周立、吴芳', planName: '盘锦农场2025年水稻种植计划', planCode: 'ZP2025-003', code: 'XQ2025-003', totalDemand: 950, gap: 0, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'已完成',priority: '低', remark: '' },
-  { id: 'dp12', year: '2026', demandPlanId:'XQ2026-012',unit: '华康农场', subUnit: '雨林分场', approvers: '王志强、刘洋', planName: '华康农场2026年棉花种植计划', planCode: 'ZP2026-009', code: 'XQ2026-009', totalDemand: 720, gap: 310, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'已完成',priority: '高', remark: '' },
+  { id: 'dp1', year: '2026', demandPlanId:'XQ2026-001',unit: '松北农场', subUnit: '华山分场', approvers: '张建国、李伟', planName: '松北农场2026年水稻种植计划', planCode: 'ZP2026-001', code: 'XQ2026-001', totalDemand: 1250, gap: 380, approvalStatus: '草稿', pushStatus: '未推送',executeStatus:'待执行', priority: '高', remark: '' },
+  { id: 'dp2', year: '2026',demandPlanId:'XQ2026-002', unit: '松北农场', subUnit: '雨林分场', approvers: '王志强、刘洋', planName: '松北农场2026年小麦种植计划', planCode: 'ZP2026-002', code: 'XQ2026-002', totalDemand: 860, gap: 120, approvalStatus: '审批中', pushStatus: '未推送', executeStatus:'待执行',priority: '中', remark: '' },
+  { id: 'dp3', year: '2026', demandPlanId:'XQ2026-003',unit: '呼兰农场', subUnit: '红星分场', approvers: '赵刚、孙磊', planName: '呼兰农场2026年玉米种植计划', planCode: 'ZP2026-003', code: 'XQ2026-003', totalDemand: 1580, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', executeStatus:'执行中',priority: '低', remark: '' },
+  { id: 'dp4', year: '2026',demandPlanId:'XQ2026-004', unit: '阿城农场', subUnit: '合发分场', approvers: '陈红、马丽', planName: '阿城农场2026年大豆种植计划', planCode: 'ZP2026-004', code: 'XQ2026-004', totalDemand: 620, gap: 250, approvalStatus: '已退回', pushStatus: '未推送', executeStatus:'待执行', priority: '高', remark: '退回原因：预算超标' },
+  { id: 'dp5', year: '2026',demandPlanId:'XQ2026-005', unit: '苏家屯农场', subUnit: '兴城分场', approvers: '周立、吴芳', planName: '苏家屯农场2026年水稻种植计划', planCode: 'ZP2026-005', code: 'XQ2026-005', totalDemand: 980, gap: 340, approvalStatus: '草稿', pushStatus: '未推送', executeStatus:'待执行',priority: '中', remark: '' },
+  { id: 'dp6', year: '2025',demandPlanId:'XQ2026-006', unit: '双城分场', subUnit: '康保分场', approvers: '张建国、李伟', planName: '双城分场2025年水稻种植计划', planCode: 'ZP2025-001', code: 'XQ2025-001', totalDemand: 1100, gap: 0, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'执行中',priority: '低', remark: '' },
+  { id: 'dp7', year: '2025', demandPlanId:'XQ2026-007',unit: '呼兰农场', subUnit: '兴安分场', approvers: '赵刚、孙磊', planName: '呼兰农场2025年玉米种植计划', planCode: 'ZP2025-002', code: 'XQ2025-002', totalDemand: 1400, gap: 0, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'已完成',priority: '低', remark: '' },
+  { id: 'dp8', year: '2026',demandPlanId:'XQ2026-008', unit: '新民农场', subUnit: '九台分场', approvers: '韩超、郑伟', planName: '新民农场2026年番茄种植计划', planCode: 'ZP2026-006', code: 'XQ2026-006', totalDemand: 420, gap: 180, approvalStatus: '审批中', pushStatus: '未推送', executeStatus:'待执行',priority: '高', remark: '' },
+  { id: 'dp9', year: '2026', demandPlanId:'XQ2026-009',unit: '五常分场', subUnit: '华山分场', approvers: '张建国、李伟', planName: '五常分场2026年花生种植计划', planCode: 'ZP2026-007', code: 'XQ2026-007', totalDemand: 530, gap: 90, approvalStatus: '已撤回', pushStatus: '未推送', executeStatus:'待执行',priority: '中', remark: '' },
+  { id: 'dp10', year: '2026', demandPlanId:'XQ2026-010',unit: '辽中分场', subUnit: '白云分场', approvers: '陈红、马丽', planName: '辽中分场2026年油菜种植计划', planCode: 'ZP2026-008', code: 'XQ2026-008', totalDemand: 380, gap: 0, approvalStatus: '强制结束', pushStatus: '未推送', executeStatus:'待执行',priority: '低', remark: '计划终止' },
+  { id: 'dp11', year: '2025', demandPlanId:'XQ2026-011',unit: '法库分场', subUnit: '红海滩分场', approvers: '周立、吴芳', planName: '法库分场2025年水稻种植计划', planCode: 'ZP2025-003', code: 'XQ2025-003', totalDemand: 950, gap: 0, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'已完成',priority: '低', remark: '' },
+  { id: 'dp12', year: '2026', demandPlanId:'XQ2026-012',unit: '松北农场', subUnit: '雨林分场', approvers: '王志强、刘洋', planName: '松北农场2026年棉花种植计划', planCode: 'ZP2026-009', code: 'XQ2026-009', totalDemand: 720, gap: 310, approvalStatus: '已完成', pushStatus: '已推送',  executeStatus:'已完成',priority: '高', remark: '' },
 ])
 
 const filteredList = computed(() => {
   let list = demandPlans.value
   if (queryYear.value) list = list.filter(i => i.year === queryYear.value)
-  if (queryUnit.value) list = list.filter(i => i.unit === queryUnit.value)
+  if (queryUnit.value) {
+    list = list.filter(i => {
+      if (i.unit === queryUnit.value) return true
+      for (const org of orgTree) {
+        if (org.label === queryUnit.value && org.children.includes(i.unit)) return true
+      }
+      return false
+    })
+  }
   if (queryPlanName.value) list = list.filter(i => i.planName.includes(queryPlanName.value))
   return list
 })
 
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredList.value.length / pageSize)))
+
+const visiblePages = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  const pages: (number | string)[] = []
+  pages.push(1)
+  let start = Math.max(2, current - 1)
+  let end = Math.min(total - 1, current + 1)
+  if (current <= 3) { start = 2; end = Math.min(4, total - 1) }
+  if (current >= total - 2) { start = Math.max(total - 3, 2); end = total - 1 }
+  if (start > 2) pages.push('...')
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (end < total - 1) pages.push('...')
+  pages.push(total)
+  return pages
+})
 
 // 状态样式
 function statusClass(status: string): string {

@@ -13,55 +13,7 @@
         <Plus class="h-4 w-4" />
         新建方案
       </button>
-    </div>
-
-    <!-- 统计卡片 -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green-100">
-            <CheckCircle2 class="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">执行中</p>
-            <p class="text-2xl font-bold">{{ activeCount }} <span class="text-sm font-normal text-muted-foreground">个方案</span></p>
-          </div>
-        </div>
-      </div>
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-100">
-            <FileText class="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">执行中面积</p>
-            <p class="text-2xl font-bold">{{ totalArea }} <span class="text-sm font-normal text-muted-foreground">亩</span></p>
-          </div>
-        </div>
-      </div>
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-            <Clock class="h-5 w-5 text-amber-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">待审核</p>
-            <p class="text-2xl font-bold">{{ reviewCount }} <span class="text-sm font-normal text-muted-foreground">个</span></p>
-          </div>
-        </div>
-      </div>
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-gray-100">
-            <AlertCircle class="h-5 w-5 text-gray-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">草稿</p>
-            <p class="text-2xl font-bold">{{ draftCount }} <span class="text-sm font-normal text-muted-foreground">个</span></p>
-          </div>
-        </div>
-      </div>
-    </div>
+    </div>  
 
     <!-- 查询条件 -->
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
@@ -72,7 +24,7 @@
             <label class="mb-1.5 block text-sm font-medium text-muted-foreground">年份</label>
             <select
               v-model="filters.year"
-              class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              class="h-9 w-auto rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
             >
               <option value="">全部</option>
               <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>

@@ -116,7 +116,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="v in filteredVarieties" :key="v.code" class="border-b hover:bg-muted/30 transition-colors">
+              <tr v-for="v in paginatedVarieties" :key="v.code" class="border-b hover:bg-muted/30 transition-colors">
                 <td class="p-4 font-medium">{{ v.name }}</td>
                 <td class="p-4">{{ v.growthCycle }}</td>
                 <td class="p-4">{{ v.season }}</td>
@@ -140,6 +140,53 @@
               </tr>
             </tbody>
           </table>
+          <!-- 分页（与作物管理列表一致） -->
+          <div v-if="varietyTotalPages > 1" class="flex items-center justify-between border-t px-2 py-3">
+            <p class="text-sm text-muted-foreground">
+              共 <span class="font-medium">{{ filteredVarieties.length }}</span> 条记录，第 {{ varietyPage }} / {{ varietyTotalPages }} 页
+            </p>
+            <div class="flex items-center gap-1">
+              <button
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="varietyPage <= 1"
+                @click="varietyPage = 1"
+              >
+                <ChevronsLeft class="h-4 w-4" />
+              </button>
+              <button
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="varietyPage <= 1"
+                @click="varietyPage--"
+              >
+                <ChevronLeft class="h-4 w-4" />
+              </button>
+              <template v-for="page in varietyVisiblePages" :key="page">
+                <button
+                  v-if="typeof page === 'number'"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors"
+                  :class="page === varietyPage ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'"
+                  @click="varietyPage = page"
+                >
+                  {{ page }}
+                </button>
+                <span v-else class="inline-flex h-8 w-8 items-center justify-center text-sm text-muted-foreground">...</span>
+              </template>
+              <button
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="varietyPage >= varietyTotalPages"
+                @click="varietyPage++"
+              >
+                <ChevronRight class="h-4 w-4" />
+              </button>
+              <button
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="varietyPage >= varietyTotalPages"
+                @click="varietyPage = varietyTotalPages"
+              >
+                <ChevronsRight class="h-4 w-4" />
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- 生育周期 -->
@@ -601,10 +648,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import {
-  Plus, ArrowLeft, Search, Pencil, Trash2, ChevronRight, X,
+  Plus, ArrowLeft, Search, Pencil, Trash2, ChevronRight, ChevronLeft, ChevronsLeft, ChevronsRight, X,
   Wheat, Coins, Leaf, Apple, TreePine, Flower2,
 } from 'lucide-vue-next'
 
@@ -729,6 +776,35 @@ const filteredVarieties = computed(() => {
   }
   return result
 })
+
+// 种植品种分页
+const varietyPage = ref(1)
+const varietyPageSize = 10
+const varietyTotalPages = computed(() => Math.ceil(filteredVarieties.value.length / varietyPageSize))
+const paginatedVarieties = computed(() => {
+  const start = (varietyPage.value - 1) * varietyPageSize
+  return filteredVarieties.value.slice(start, start + varietyPageSize)
+})
+const varietyVisiblePages = computed(() => {
+  const total = varietyTotalPages.value
+  const current = varietyPage.value
+  const pages: (number | string)[] = []
+  if (total <= 7) {
+    for (let i = 1; i <= total; i++) pages.push(i)
+  } else {
+    pages.push(1)
+    if (current > 3) pages.push('...')
+    const start = Math.max(2, current - 1)
+    const end = Math.min(total - 1, current + 1)
+    for (let i = start; i <= end; i++) pages.push(i)
+    if (current < total - 2) pages.push('...')
+    pages.push(total)
+  }
+  return pages
+})
+
+// 切换作物大类时重置分页
+watch(selectedMajor, () => { varietyPage.value = 1 })
 
 // 生育周期数据
 interface GrowthCycleItem {
