@@ -204,54 +204,48 @@
       </div>
     </div>
 
-    <!-- 按紧急度汇总 -->
+    <!-- 采购紧急优先级 -->
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div class="flex flex-col space-y-1.5 p-6">
-        <h3 class="text-lg font-semibold leading-none tracking-tight">紧急度分布</h3>
-        <p class="text-sm text-muted-foreground">按采购紧急程度分类的物资统计</p>
+        <h3 class="text-lg font-semibold leading-none tracking-tight">采购紧急优先级</h3>
+        <p class="text-sm text-muted-foreground">按采购紧急优先级等级分类展示，排序依据：需求使用时间 + 推送时间</p>
       </div>
       <div class="p-6 pt-0">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <!-- 紧急度-紧急 -->
-          <div class="rounded-lg border border-red-200 bg-red-50/30 p-4">
+        <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div
+            v-for="priority in priorityGroups"
+            :key="priority.level"
+            class="rounded-lg border p-4"
+            :class="priority.cardClass"
+          >
             <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-red-700">紧急</span>
-              <span class="text-2xl font-bold">{{ urgencySummaries[0].count }}</span>
+              <div class="flex items-center gap-2">
+                <span
+                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  :class="priority.badgeClass"
+                >{{ priority.level }}</span>
+                <span class="text-sm text-muted-foreground">{{ priority.items.length }} 项</span>
+              </div>
             </div>
-            <p class="mt-1 text-xs text-muted-foreground/60">= 需7天内到货的物资项数</p>
-            <div class="mt-2 space-y-1">
-              <p class="text-xs text-muted-foreground">· 大豆种子</p>
-              <p class="text-xs text-muted-foreground">· 氯化钾</p>
-              <p class="text-xs text-muted-foreground">· 磷酸二铵</p>
-            </div>
-          </div>
-          <!-- 紧急度-一般 -->
-          <div class="rounded-lg border border-amber-200 bg-amber-50/30 p-4">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-amber-700">一般</span>
-              <span class="text-2xl font-bold">{{ urgencySummaries[1].count }}</span>
-            </div>
-            <p class="mt-1 text-xs text-muted-foreground/60">= 需30天内到货的物资项数</p>
-            <div class="mt-2 space-y-1">
-              <p class="text-xs text-muted-foreground">· 尿素</p>
-              <p class="text-xs text-muted-foreground">· 吡虫啉</p>
-              <p class="text-xs text-muted-foreground">· 柴油</p>
-              <p class="text-xs text-muted-foreground">· 油菜种子</p>
-            </div>
-          </div>
-          <!-- 紧急度-低优先 -->
-          <div class="rounded-lg border border-gray-200 p-4">
-            <div class="flex items-center justify-between">
-              <span class="text-sm font-semibold text-gray-600">低优先</span>
-              <span class="text-2xl font-bold">{{ urgencySummaries[2].count }}</span>
-            </div>
-            <p class="mt-1 text-xs text-muted-foreground/60">= 30天以上到货即可的物资项数</p>
-            <div class="mt-2 space-y-1">
-              <p class="text-xs text-muted-foreground">· 杂交水稻种</p>
-              <p class="text-xs text-muted-foreground">· 玉米杂交种</p>
-              <p class="text-xs text-muted-foreground">· 复合肥</p>
-              <p class="text-xs text-muted-foreground">· 草甘膦</p>
-              <p class="text-xs text-muted-foreground">· 农膜</p>
+            <p class="mt-1 text-xs text-muted-foreground/60">{{ priority.rule }}</p>
+            <div class="mt-3 space-y-2">
+              <div
+                v-for="item in priority.items"
+                :key="item.name"
+                class="flex items-center justify-between rounded-md bg-white/60 px-3 py-2"
+              >
+                <div class="flex items-center gap-2">
+                  <span
+                    class="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium"
+                    :class="getCategoryBadgeClass(item.category)"
+                  >{{ item.category }}</span>
+                  <span class="text-sm font-medium">{{ item.name }}</span>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                  <span>需用: {{ item.useTime }}</span>
+                  <span>推送: {{ item.pushTime }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -287,10 +281,19 @@ interface RegionSummary {
   categoryCount: number
 }
 
-interface UrgencySummary {
+interface PriorityItem {
+  name: string
+  category: string
+  useTime: string
+  pushTime: string
+}
+
+interface PriorityGroup {
   level: string
-  count: number
-  items: string[]
+  rule: string
+  cardClass: string
+  badgeClass: string
+  items: PriorityItem[]
 }
 
 // 区域公司汇总数据
@@ -321,11 +324,56 @@ const categoryStyles = [
   { badge: 'bg-gray-100 text-gray-700 hover:bg-gray-100' },
 ]
 
-const urgencySummaries: UrgencySummary[] = [
-  { level: '紧急', count: 3, items: ['大豆种子', '氯化钾', '磷酸二铵'] },
-  { level: '一般', count: 4, items: ['尿素', '吡虫啉', '柴油', '油菜种子'] },
-  { level: '低优先', count: 5, items: ['杂交水稻种', '玉米杂交种', '复合肥', '草甘膦', '农膜'] },
+const priorityGroups: PriorityGroup[] = [
+  {
+    level: '高优先级',
+    rule: '需求使用时间 < 7天 或 缺口量 > 库存50%',
+    cardClass: 'border-red-200 bg-red-50/30',
+    badgeClass: 'bg-red-100 text-red-700',
+    items: [
+      { name: '大豆种子', category: '种子', useTime: '2025-03-20', pushTime: '2025-03-10' },
+      { name: '氯化钾', category: '肥料', useTime: '2025-03-18', pushTime: '2025-03-12' },
+      { name: '磷酸二铵', category: '肥料', useTime: '2025-03-22', pushTime: '2025-03-14' },
+    ],
+  },
+  {
+    level: '中优先级',
+    rule: '需求使用时间 7-30天',
+    cardClass: 'border-amber-200 bg-amber-50/30',
+    badgeClass: 'bg-amber-100 text-amber-700',
+    items: [
+      { name: '尿素', category: '肥料', useTime: '2025-04-05', pushTime: '2025-03-15' },
+      { name: '吡虫啉', category: '农药', useTime: '2025-04-10', pushTime: '2025-03-18' },
+      { name: '柴油', category: '其他', useTime: '2025-04-08', pushTime: '2025-03-20' },
+      { name: '油菜种子', category: '种子', useTime: '2025-04-15', pushTime: '2025-03-22' },
+    ],
+  },
+  {
+    level: '低优先级',
+    rule: '需求使用时间 > 30天',
+    cardClass: 'border-gray-200',
+    badgeClass: 'bg-gray-100 text-gray-700',
+    items: [
+      { name: '杂交水稻种', category: '种子', useTime: '2025-05-10', pushTime: '2025-03-25' },
+      { name: '玉米杂交种', category: '种子', useTime: '2025-05-15', pushTime: '2025-03-25' },
+      { name: '复合肥', category: '肥料', useTime: '2025-05-20', pushTime: '2025-03-28' },
+      { name: '草甘膦', category: '农药', useTime: '2025-06-01', pushTime: '2025-04-01' },
+      { name: '农膜', category: '其他', useTime: '2025-05-25', pushTime: '2025-04-02' },
+    ],
+  },
 ]
+
+// 获取农资大类对应的徽章样式
+function getCategoryBadgeClass(category: string): string {
+  const map: Record<string, string> = {
+    '种子': 'bg-green-100 text-green-700',
+    '肥料': 'bg-amber-100 text-amber-700',
+    '农药': 'bg-red-100 text-red-700',
+    '农具': 'bg-blue-100 text-blue-700',
+    '其他': 'bg-gray-100 text-gray-700',
+  }
+  return map[category] || 'bg-gray-100 text-gray-700'
+}
 
 // 总览统计（基于区域公司汇总）
 const totalBudget = computed(() =>
