@@ -72,15 +72,95 @@
       </div>
     </div>
 
-    <!-- 按类别汇总 -->
+    <!-- 分类汇总 -->
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div class="flex flex-col space-y-1.5 p-6">
         <h3 class="text-lg font-semibold leading-none tracking-tight">分类汇总</h3>
-        <p class="text-sm text-muted-foreground">按物资类别统计采购进度和预算执行情况</p>
+        <p class="text-sm text-muted-foreground">按维度统计采购进度和预算执行情况，点击卡片查看明细</p>
       </div>
-      <div class="p-6 pt-0">
-        <div class="space-y-4">
-          <div v-for="(cat, idx) in categorySummaries" :key="cat.category" class="rounded-lg border p-4">
+      <!-- 选项卡 -->
+      <div class="border-b px-6">
+        <div class="flex gap-6">
+          <button
+            class="relative pb-3 text-sm font-medium transition-colors"
+            :class="summaryTab === 'region' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'"
+            @click="summaryTab = 'region'"
+          >
+            按区域公司
+            <span v-if="summaryTab === 'region'" class="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />
+          </button>
+          <button
+            class="relative pb-3 text-sm font-medium transition-colors"
+            :class="summaryTab === 'category' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'"
+            @click="summaryTab = 'category'"
+          >
+            按农资大类
+            <span v-if="summaryTab === 'category'" class="absolute inset-x-0 -bottom-px h-0.5 bg-primary" />
+          </button>
+        </div>
+      </div>
+      <div class="p-6 pt-4">
+        <!-- 按区域公司汇总 -->
+        <div v-if="summaryTab === 'region'" class="space-y-4">
+          <div
+            v-for="(region, idx) in regionSummaries"
+            :key="region.region"
+            class="cursor-pointer rounded-lg border p-4 transition-colors hover:border-primary/40 hover:bg-muted/20"
+            @click="goSummaryDetail('region', region.region)"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <span
+                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  :class="regionStyles[idx]?.badge"
+                >{{ region.region }}</span>
+                <span class="text-sm text-muted-foreground">{{ region.totalItems }} 项物资</span>
+              </div>
+              <div class="flex items-center gap-4">
+                <span class="text-sm text-muted-foreground">农资总类 <span class="font-semibold text-foreground">{{ region.categoryCount }}</span> 项</span>
+                <span class="text-sm font-medium">{{ region.fulfilledItems }}/{{ region.totalItems }} 已满足</span>
+              </div>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-4">
+              <div>
+                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>采购进度</span>
+                  <span>{{ getFulfillRate(region) }}%</span>
+                </div>
+                <div class="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="regionStyles[idx]?.bar"
+                    :style="{ width: getFulfillRate(region) + '%' }"
+                  />
+                </div>
+                <p class="mt-1 text-xs text-muted-foreground/60">= 已满足项数 ÷ 物资总项数 × 100%</p>
+              </div>
+              <div>
+                <div class="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>预算执行</span>
+                  <span>{{ getCostRate(region) }}% · ¥{{ region.purchasedCost.toLocaleString() }}/{{ region.totalCost.toLocaleString() }}</span>
+                </div>
+                <div class="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full transition-all"
+                    :class="regionStyles[idx]?.bar"
+                    :style="{ width: getCostRate(region) + '%' }"
+                  />
+                </div>
+                <p class="mt-1 text-xs text-muted-foreground/60">= 已采购额 ÷ 预算总额 × 100%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- 按农资大类汇总 -->
+        <div v-if="summaryTab === 'category'" class="space-y-4">
+          <div
+            v-for="(cat, idx) in categorySummaries"
+            :key="cat.category"
+            class="cursor-pointer rounded-lg border p-4 transition-colors hover:border-primary/40 hover:bg-muted/20"
+            @click="goSummaryDetail('category', cat.category)"
+          >
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <span
@@ -97,13 +177,11 @@
                   <span>采购进度</span>
                   <span>{{ getFulfillRate(cat) }}%</span>
                 </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getFulfillRate(cat) + '%' }"
-                    />
-                  </div>
+                <div class="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all"
+                    :style="{ width: getFulfillRate(cat) + '%' }"
+                  />
                 </div>
                 <p class="mt-1 text-xs text-muted-foreground/60">= 已满足项数 ÷ 物资总项数 × 100%</p>
               </div>
@@ -112,13 +190,11 @@
                   <span>预算执行</span>
                   <span>{{ getCostRate(cat) }}% · ¥{{ cat.purchasedCost.toLocaleString() }}/{{ cat.totalCost.toLocaleString() }}</span>
                 </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getCostRate(cat) + '%' }"
-                    />
-                  </div>
+                <div class="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                  <div
+                    class="h-full rounded-full bg-primary transition-all"
+                    :style="{ width: getCostRate(cat) + '%' }"
+                  />
                 </div>
                 <p class="mt-1 text-xs text-muted-foreground/60">= 已采购额 ÷ 预算总额 × 100%</p>
               </div>
@@ -185,8 +261,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Package, ChartPie, DollarSign, TrendingUp } from 'lucide-vue-next'
+
+const router = useRouter()
+
+// 分类汇总选项卡
+const summaryTab = ref<'region' | 'category'>('region')
 
 interface CategorySummary {
   category: string
@@ -196,12 +278,33 @@ interface CategorySummary {
   purchasedCost: number
 }
 
+interface RegionSummary {
+  region: string
+  totalItems: number
+  fulfilledItems: number
+  totalCost: number
+  purchasedCost: number
+  categoryCount: number
+}
+
 interface UrgencySummary {
   level: string
   count: number
   items: string[]
 }
 
+// 区域公司汇总数据
+const regionSummaries: RegionSummary[] = [
+  { region: '哈尔滨公司', totalItems: 17, fulfilledItems: 8, totalCost: 83400, purchasedCost: 51200, categoryCount: 5 },
+  { region: '沈阳公司', totalItems: 8, fulfilledItems: 4, totalCost: 56200, purchasedCost: 35800, categoryCount: 4 },
+]
+
+const regionStyles = [
+  { badge: 'bg-blue-100 text-blue-700', bar: 'bg-blue-500' },
+  { badge: 'bg-indigo-100 text-indigo-700', bar: 'bg-indigo-500' },
+]
+
+// 农资大类汇总数据
 const categorySummaries: CategorySummary[] = [
   { category: '种子', totalItems: 4, fulfilledItems: 2, totalCost: 27900, purchasedCost: 20900 },
   { category: '肥料', totalItems: 4, fulfilledItems: 1, totalCost: 26400, purchasedCost: 14700 },
@@ -224,31 +327,37 @@ const urgencySummaries: UrgencySummary[] = [
   { level: '低优先', count: 5, items: ['杂交水稻种', '玉米杂交种', '复合肥', '草甘膦', '农膜'] },
 ]
 
+// 总览统计（基于区域公司汇总）
 const totalBudget = computed(() =>
-  categorySummaries.reduce((sum, c) => sum + c.totalCost, 0)
+  regionSummaries.reduce((sum, r) => sum + r.totalCost, 0)
 )
 
 const totalPurchased = computed(() =>
-  categorySummaries.reduce((sum, c) => sum + c.purchasedCost, 0)
+  regionSummaries.reduce((sum, r) => sum + r.purchasedCost, 0)
 )
 
 const totalItems = computed(() =>
-  categorySummaries.reduce((s, c) => s + c.totalItems, 0)
+  regionSummaries.reduce((s, r) => s + r.totalItems, 0)
 )
 
 const totalFulfilledItems = computed(() =>
-  categorySummaries.reduce((s, c) => s + c.fulfilledItems, 0)
+  regionSummaries.reduce((s, r) => s + r.fulfilledItems, 0)
 )
 
 const totalFulfillRate = computed(() =>
   Math.round((totalFulfilledItems.value / totalItems.value) * 100)
 )
 
-function getFulfillRate(cat: CategorySummary): number {
-  return Math.round((cat.fulfilledItems / cat.totalItems) * 100)
+function getFulfillRate(item: CategorySummary | RegionSummary): number {
+  return Math.round((item.fulfilledItems / item.totalItems) * 100)
 }
 
-function getCostRate(cat: CategorySummary): number {
-  return Math.round((cat.purchasedCost / cat.totalCost) * 100)
+function getCostRate(item: CategorySummary | RegionSummary): number {
+  return Math.round((item.purchasedCost / item.totalCost) * 100)
+}
+
+// 点击卡片跳转汇总详情列表
+function goSummaryDetail(tab: string, key: string) {
+  router.push(`/material-demand/summary/${tab}/${encodeURIComponent(key)}`)
 }
 </script>

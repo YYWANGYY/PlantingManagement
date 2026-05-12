@@ -47,6 +47,11 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '需求汇总', parent: '农资需求' },
       },
       {
+        path: 'material-demand/summary/:tab/:key',
+        component: () => import('@/views/material-demand/summary-detail.vue'),
+        meta: { title: '汇总明细', parent: '农资需求' },
+      },
+      {
         path: 'statistics/archive',
         component: () => import('@/views/statistics/archive.vue'),
         meta: { title: '种植档案', parent: '统计分析' },
