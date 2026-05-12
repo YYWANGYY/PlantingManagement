@@ -400,36 +400,28 @@ onUnmounted(() => {
 // ==================== 作物数据 ====================
 // 数据来源：基础管理→作物管理
 const cropMajors = [
-  { name: '粮食作物', code: 'c1', plantingMode: 'field' },
-  { name: '经济作物', code: 'c2', plantingMode: 'field' },
-  { name: '牧草作物', code: 'c3', plantingMode: 'field' },
-  { name: '蔬菜作物', code: 'c4', plantingMode: 'greenhouse' },
-  { name: '水果作物', code: 'c5', plantingMode: 'greenhouse' },
-  { name: '花卉作物', code: 'c6', plantingMode: 'greenhouse' },
+  { name: '水稻', code: 'rice', plantingMode: 'field' },
+  { name: '小麦', code: 'wheat', plantingMode: 'field' },
+  { name: '玉米', code: 'corn', plantingMode: 'field' },
+  { name: '大豆', code: 'soybean', plantingMode: 'field' }
 ] as const
 
 const cropVarieties = [
-  // 粮食作物
-  { name: '水稻', code: 'v1', majorCode: 'c1', majorName: '粮食作物' },
-  { name: '小麦', code: 'v2', majorCode: 'c1', majorName: '粮食作物' },
-  { name: '玉米', code: 'v3', majorCode: 'c1', majorName: '粮食作物' },
-  { name: '大豆', code: 'v4', majorCode: 'c1', majorName: '粮食作物' },
-  // 经济作物
-  { name: '棉花', code: 'v5', majorCode: 'c2', majorName: '经济作物' },
-  { name: '油菜', code: 'v6', majorCode: 'c2', majorName: '经济作物' },
-  { name: '花生', code: 'v7', majorCode: 'c2', majorName: '经济作物' },
-  // 牧草作物
-  { name: '紫花苜蓿', code: 'v8', majorCode: 'c3', majorName: '牧草作物' },
-  { name: '饲用玉米', code: 'v9', majorCode: 'c3', majorName: '牧草作物' },
-  // 蔬菜作物
-  { name: '番茄', code: 'v10', majorCode: 'c4', majorName: '蔬菜作物' },
-  { name: '黄瓜', code: 'v11', majorCode: 'c4', majorName: '蔬菜作物' },
-  { name: '白菜', code: 'v12', majorCode: 'c4', majorName: '蔬菜作物' },
-  // 水果作物
-  { name: '苹果', code: 'v13', majorCode: 'c5', majorName: '水果作物' },
-  { name: '葡萄', code: 'v14', majorCode: 'c5', majorName: '水果作物' },
-  // 花卉作物
-  { name: '月季', code: 'v15', majorCode: 'c6', majorName: '花卉作物' },
+  // 水稻
+  { name: '籼稻', code: 'indica_rice', majorCode: 'rice', majorName: '水稻' },
+  { name: '粳稻', code: 'japonica_rice', majorCode: 'rice', majorName: '水稻' },
+  { name: '糯稻', code: 'glutinous_rice', majorCode: 'rice', majorName: '水稻' },
+  { name: '杂交稻', code: 'hybrid_rice', majorCode: 'rice', majorName: '水稻' },
+  // 小麦
+  { name: '强筋小麦', code: 'strong_gluten_wheat', majorCode: 'wheat', majorName: '小麦' },
+  { name: '中筋小麦', code: 'medium_gluten_wheat', majorCode: 'wheat', majorName: '小麦' },
+  { name: '弱筋小麦', code: 'weak_gluten_wheat', majorCode: 'wheat', majorName: '小麦' },
+  // 玉米
+  { name: '甜玉米', code: 'sweet_corn', majorCode: 'corn', majorName: '玉米' },
+  { name: '糯玉米', code: 'waxy_corn', majorCode: 'corn', majorName: '玉米' },
+  // 大豆
+  { name: '高蛋白大豆', code: 'high_protein_soybean', majorCode: 'soybean', majorName: '大豆' },
+  { name: '高油大豆', code: 'high_oil_soybean', majorCode: 'soybean', majorName: '大豆' }
 ] as const
 
 const cropCategories = cropMajors.map(m => m.name)
@@ -499,29 +491,29 @@ function effectiveBadgeClass(status: EffectiveStatus): string {
 
 // ==================== 模拟数据 ====================
 const allSchemes: SchemeVersion[] = [
-  { id: 'SP-2024-001', name: '春季水稻高产方案', unit: '松北农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '水稻', applicableArea: '松北平原', totalDays: 135, author: '张农技', compiledAt: '2024-02-15', approvalStatus: 'completed', effectiveTime: '2024-03-01', effectiveStatus: 'active', version: 2, changeNote: '调整施肥配比', year: 2024 },
-  { id: 'SP-2024-001', name: '春季水稻高产方案', unit: '松北农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '水稻', applicableArea: '松北平原', totalDays: 130, author: '张农技', compiledAt: '2024-01-10', approvalStatus: 'completed', effectiveTime: '2024-01-20', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2024 },
-  { id: 'SP-2024-002', name: '冬小麦越冬方案', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '小麦', applicableArea: '呼兰流域', totalDays: 230, author: '李规划', compiledAt: '2024-01-20', approvalStatus: 'completed', effectiveTime: '2024-02-01', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2024 },
-  { id: 'SP-2024-003', name: '夏玉米密植方案', unit: '苏家屯农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '玉米', applicableArea: '苏家屯产区', totalDays: 110, author: '王技术', compiledAt: '2024-03-10', approvalStatus: 'review', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2024 },
-  { id: 'SP-2024-004', name: '大豆轮作方案', unit: '阿城农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '大豆', applicableArea: '阿城产区', totalDays: 120, author: '赵助理', compiledAt: '2024-03-18', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2024 },
-  { id: 'SP-2024-005', name: '棉花管理方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '经济作物', cropVariety: '棉花', applicableArea: '新民产区', totalDays: 180, author: '张农技', compiledAt: '2024-02-28', approvalStatus: 'completed', effectiveTime: '2024-03-15', effectiveStatus: 'active', version: 3, changeNote: '增加病虫害防治', year: 2024 },
-  { id: 'SP-2024-005', name: '棉花管理方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '经济作物', cropVariety: '棉花', applicableArea: '新民产区', totalDays: 175, author: '张农技', compiledAt: '2024-02-01', approvalStatus: 'completed', effectiveTime: '2024-02-15', effectiveStatus: 'inactive', version: 2, changeNote: '调整密度', year: 2024 },
-  { id: 'SP-2024-005', name: '棉花管理方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '经济作物', cropVariety: '棉花', applicableArea: '新民产区', totalDays: 170, author: '张农技', compiledAt: '2024-01-15', approvalStatus: 'completed', effectiveTime: '2024-01-25', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2024 },
-  { id: 'SP-2024-006', name: '油菜秋播方案', unit: '辽中分场', plantingMode: '大田种植', cropCategory: '经济作物', cropVariety: '油菜', applicableArea: '辽中产区', totalDays: 200, author: '李规划', compiledAt: '2024-03-22', approvalStatus: 'returned', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '已退回修改', year: 2024 },
-  { id: 'SP-2024-007', name: '花生覆膜方案', unit: '双城分场', plantingMode: '大田种植', cropCategory: '经济作物', cropVariety: '花生', applicableArea: '双城产区', totalDays: 140, author: '王技术', compiledAt: '2024-03-05', approvalStatus: 'completed', effectiveTime: '2024-03-20', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2024 },
-  { id: 'SP-2024-008', name: '紫花苜蓿种植方案', unit: '法库分场', plantingMode: '大田种植', cropCategory: '牧草作物', cropVariety: '紫花苜蓿', applicableArea: '法库产区', totalDays: 90, author: '赵助理', compiledAt: '2023-09-10', approvalStatus: 'forced_end', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '强制结束', year: 2023 },
-  { id: 'SP-2025-001', name: '春季水稻高产方案(25)', unit: '松北农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '水稻', applicableArea: '松北平原', totalDays: 140, author: '张农技', compiledAt: '2025-02-10', approvalStatus: 'completed', effectiveTime: '2025-03-01', effectiveStatus: 'active', version: 1, changeNote: '新年度方案', year: 2025 },
-  { id: 'SP-2025-002', name: '小麦冬灌方案', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '小麦', applicableArea: '呼兰流域', totalDays: 235, author: '李规划', compiledAt: '2025-01-05', approvalStatus: 'review', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2025 },
-  { id: 'SP-2025-003', name: '大棚番茄种植方案', unit: '阿城农场', plantingMode: '设施农业种植', cropCategory: '蔬菜', cropVariety: '番茄', applicableArea: '阿城设施区', totalDays: 160, author: '王技术', compiledAt: '2025-02-20', approvalStatus: 'completed', effectiveTime: '2025-03-01', effectiveStatus: 'active', version: 2, changeNote: '优化温控参数', year: 2025 },
-  { id: 'SP-2025-003', name: '大棚番茄种植方案', unit: '阿城农场', plantingMode: '设施农业种植', cropCategory: '蔬菜', cropVariety: '番茄', applicableArea: '阿城设施区', totalDays: 155, author: '王技术', compiledAt: '2025-01-15', approvalStatus: 'completed', effectiveTime: '2025-01-25', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2025 },
-  { id: 'SP-2025-004', name: '苜蓿种植方案', unit: '五常分场', plantingMode: '大田种植', cropCategory: '牧草作物', cropVariety: '紫花苜蓿', applicableArea: '五常产区', totalDays: 90, author: '赵助理', compiledAt: '2025-03-01', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2025 },
-  { id: 'SP-2025-005', name: '苹果矮化密植方案', unit: '苏家屯农场', plantingMode: '设施农业种植', cropCategory: '水果', cropVariety: '苹果', applicableArea: '苏家屯果区', totalDays: 200, author: '张农技', compiledAt: '2025-03-10', approvalStatus: 'returned', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '已退回修改', year: 2025 },
-  { id: 'SP-2025-006', name: '玉米青贮方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '牧草作物', cropVariety: '饲用玉米', applicableArea: '新民产区', totalDays: 105, author: '李规划', compiledAt: '2025-02-15', approvalStatus: 'revoked', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '已撤回', year: 2025 },
-  { id: 'SP-2026-001', name: '水稻智能灌溉方案', unit: '松北农场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '水稻', applicableArea: '松北平原', totalDays: 130, author: '张农技', compiledAt: '2026-02-01', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2026 },
-  { id: 'SP-2026-002', name: '大豆窄行密植方案', unit: '双城分场', plantingMode: '大田种植', cropCategory: '粮食作物', cropVariety: '大豆', applicableArea: '双城产区', totalDays: 115, author: '王技术', compiledAt: '2026-03-05', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2026 },
-  { id: 'SP-2026-003', name: '油菜机械化方案', unit: '辽中分场', plantingMode: '大田种植', cropCategory: '经济作物', cropVariety: '油菜', applicableArea: '辽中产区', totalDays: 195, author: '赵助理', compiledAt: '2026-01-20', approvalStatus: 'completed', effectiveTime: '2026-02-01', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2026 },
-  { id: 'SP-2026-004', name: '棉花滴灌方案', unit: '法库分场', plantingMode: '设施农业种植', cropCategory: '经济作物', cropVariety: '棉花', applicableArea: '法库产区', totalDays: 185, author: '李规划', compiledAt: '2026-02-10', approvalStatus: 'review', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2026 },
-  { id: 'SP-2026-005', name: '番茄无土栽培方案', unit: '阿城农场', plantingMode: '设施农业种植', cropCategory: '蔬菜', cropVariety: '番茄', applicableArea: '阿城设施区', totalDays: 165, author: '张农技', compiledAt: '2026-02-25', approvalStatus: 'completed', effectiveTime: '2026-03-10', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2026 },
+  { id: 'SP-2024-001', name: '春季水稻高产方案', unit: '松北农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '籼稻', applicableArea: '松北平原', totalDays: 135, author: '张农技', compiledAt: '2024-02-15', approvalStatus: 'completed', effectiveTime: '2024-03-01', effectiveStatus: 'active', version: 2, changeNote: '调整施肥配比', year: 2024 },
+  { id: 'SP-2024-001', name: '春季水稻高产方案', unit: '松北农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '籼稻', applicableArea: '松北平原', totalDays: 130, author: '张农技', compiledAt: '2024-01-10', approvalStatus: 'completed', effectiveTime: '2024-01-20', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2024 },
+  { id: 'SP-2024-002', name: '冬小麦越冬方案', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '粳稻', applicableArea: '呼兰流域', totalDays: 230, author: '李规划', compiledAt: '2024-01-20', approvalStatus: 'completed', effectiveTime: '2024-02-01', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2024 },
+  { id: 'SP-2024-003', name: '夏玉米密植方案', unit: '苏家屯农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '粳稻', applicableArea: '苏家屯产区', totalDays: 110, author: '王技术', compiledAt: '2024-03-10', approvalStatus: 'review', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2024 },
+  { id: 'SP-2024-004', name: '大豆轮作方案', unit: '阿城农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '粳稻', applicableArea: '阿城产区', totalDays: 120, author: '赵助理', compiledAt: '2024-03-18', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2024 },
+  { id: 'SP-2024-005', name: '棉花管理方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '强筋小麦', applicableArea: '新民产区', totalDays: 180, author: '张农技', compiledAt: '2024-02-28', approvalStatus: 'completed', effectiveTime: '2024-03-15', effectiveStatus: 'active', version: 3, changeNote: '增加病虫害防治', year: 2024 },
+  { id: 'SP-2024-005', name: '棉花管理方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '强筋小麦', applicableArea: '新民产区', totalDays: 175, author: '张农技', compiledAt: '2024-02-01', approvalStatus: 'completed', effectiveTime: '2024-02-15', effectiveStatus: 'inactive', version: 2, changeNote: '调整密度', year: 2024 },
+  { id: 'SP-2024-005', name: '棉花管理方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '强筋小麦', applicableArea: '新民产区', totalDays: 170, author: '张农技', compiledAt: '2024-01-15', approvalStatus: 'completed', effectiveTime: '2024-01-25', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2024 },
+  { id: 'SP-2024-006', name: '油菜秋播方案', unit: '辽中分场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '强筋小麦', applicableArea: '辽中产区', totalDays: 200, author: '李规划', compiledAt: '2024-03-22', approvalStatus: 'returned', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '已退回修改', year: 2024 },
+  { id: 'SP-2024-007', name: '花生覆膜方案', unit: '双城分场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '强筋小麦', applicableArea: '双城产区', totalDays: 140, author: '王技术', compiledAt: '2024-03-05', approvalStatus: 'completed', effectiveTime: '2024-03-20', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2024 },
+  { id: 'SP-2024-008', name: '紫花苜蓿种植方案', unit: '法库分场', plantingMode: '大田种植', cropCategory: '玉米', cropVariety: '糯玉米', applicableArea: '法库产区', totalDays: 90, author: '赵助理', compiledAt: '2023-09-10', approvalStatus: 'forced_end', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '强制结束', year: 2023 },
+  { id: 'SP-2025-001', name: '春季水稻高产方案(25)', unit: '松北农场', plantingMode: '大田种植', cropCategory: '玉米', cropVariety: '甜玉米', applicableArea: '松北平原', totalDays: 140, author: '张农技', compiledAt: '2025-02-10', approvalStatus: 'completed', effectiveTime: '2025-03-01', effectiveStatus: 'active', version: 1, changeNote: '新年度方案', year: 2025 },
+  { id: 'SP-2025-002', name: '小麦冬灌方案', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '玉米', cropVariety: '糯玉米', applicableArea: '呼兰流域', totalDays: 235, author: '李规划', compiledAt: '2025-01-05', approvalStatus: 'review', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2025 },
+  { id: 'SP-2025-003', name: '大棚番茄种植方案', unit: '阿城农场', plantingMode: '设施农业种植', cropCategory: '大豆', cropVariety: '高蛋白大豆', applicableArea: '阿城设施区', totalDays: 160, author: '王技术', compiledAt: '2025-02-20', approvalStatus: 'completed', effectiveTime: '2025-03-01', effectiveStatus: 'active', version: 2, changeNote: '优化温控参数', year: 2025 },
+  { id: 'SP-2025-003', name: '大棚番茄种植方案', unit: '阿城农场', plantingMode: '设施农业种植', cropCategory: '大豆', cropVariety: '高油大豆', applicableArea: '阿城设施区', totalDays: 155, author: '王技术', compiledAt: '2025-01-15', approvalStatus: 'completed', effectiveTime: '2025-01-25', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2025 },
+  { id: 'SP-2025-004', name: '苜蓿种植方案', unit: '五常分场', plantingMode: '大田种植', cropCategory: '大豆', cropVariety: '紫花苜蓿', applicableArea: '五常产区', totalDays: 90, author: '赵助理', compiledAt: '2025-03-01', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2025 },
+  { id: 'SP-2025-005', name: '苹果矮化密植方案', unit: '苏家屯农场', plantingMode: '设施农业种植', cropCategory: '大豆', cropVariety: '高油大豆', applicableArea: '苏家屯果区', totalDays: 200, author: '张农技', compiledAt: '2025-03-10', approvalStatus: 'returned', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '已退回修改', year: 2025 },
+  { id: 'SP-2025-006', name: '玉米青贮方案', unit: '新民农场', plantingMode: '大田种植', cropCategory: '玉米', cropVariety: '甜玉米', applicableArea: '新民产区', totalDays: 105, author: '李规划', compiledAt: '2025-02-15', approvalStatus: 'revoked', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '已撤回', year: 2025 },
+  { id: 'SP-2026-001', name: '水稻智能灌溉方案', unit: '松北农场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '水稻', applicableArea: '松北平原', totalDays: 130, author: '张农技', compiledAt: '2026-02-01', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2026 },
+  { id: 'SP-2026-002', name: '大豆窄行密植方案', unit: '双城分场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '大豆', applicableArea: '双城产区', totalDays: 115, author: '王技术', compiledAt: '2026-03-05', approvalStatus: 'draft', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '草稿', year: 2026 },
+  { id: 'SP-2026-003', name: '油菜机械化方案', unit: '辽中分场', plantingMode: '大田种植', cropCategory: '玉米', cropVariety: '糯玉米', applicableArea: '辽中产区', totalDays: 195, author: '赵助理', compiledAt: '2026-01-20', approvalStatus: 'completed', effectiveTime: '2026-02-01', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2026 },
+  { id: 'SP-2026-004', name: '棉花滴灌方案', unit: '法库分场', plantingMode: '设施农业种植', cropCategory: '玉米', cropVariety: '甜玉米', applicableArea: '法库产区', totalDays: 185, author: '李规划', compiledAt: '2026-02-10', approvalStatus: 'review', effectiveTime: '', effectiveStatus: 'inactive', version: 1, changeNote: '初始版本', year: 2026 },
+  { id: 'SP-2026-005', name: '番茄无土栽培方案', unit: '阿城农场', plantingMode: '设施农业种植', cropCategory: '大豆', cropVariety: '高油大豆', applicableArea: '阿城设施区', totalDays: 165, author: '张农技', compiledAt: '2026-02-25', approvalStatus: 'completed', effectiveTime: '2026-03-10', effectiveStatus: 'active', version: 1, changeNote: '初始版本', year: 2026 },
 ]
 
 // ==================== 按最新版本分组 ====================
