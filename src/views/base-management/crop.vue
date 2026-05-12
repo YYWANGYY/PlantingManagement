@@ -65,99 +65,85 @@
     </div>
 
     <!-- 作物列表 -->
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div class="p-6 pt-0">
-        <div class="relative w-full overflow-auto">
-          <table class="w-full caption-bottom text-sm">
-            <thead class="[&_tr]:border-b">
-              <tr class="border-b transition-colors hover:bg-muted/50">
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">作物大类</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">作物类别</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">作物品种</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">生长周期</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">适宜季节</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">种植区域</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground">土壤类型</th>
-                <th class="h-10 px-3 text-left align-middle font-medium text-muted-foreground w-20">状态</th>
-                <th class="h-10 px-3 text-right align-middle font-medium text-muted-foreground w-24">操作</th>
-              </tr>
-            </thead>
-            <tbody class="[&_tr:last-child]:border-0">
-              <tr
-                v-for="crop in paginatedCrops"
-                :key="crop.id"
-                class="border-b transition-colors hover:bg-muted/50 cursor-pointer"
-                @click="goToForm(crop.categoryCode)"
-              >
-                <td class="p-2 px-3 align-middle text-muted-foreground">{{ crop.type }}</td>
-                <td class="p-2 px-3 align-middle">
-                  <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium" :class="categoryClass(crop.categoryCode)">{{ crop.category }}</span>
-                </td>
-
-                <td class="p-2 px-3 align-middle font-medium">{{ crop.variety }}</td>
-                <td class="p-2 px-3 align-middle">{{ crop.growthCycle }}</td>
-                <td class="p-2 px-3 align-middle">{{ crop.season }}</td>
-                <td class="p-2 px-3 align-middle">{{ crop.region }}</td>
-                <td class="p-2 px-3 align-middle">{{ crop.soilType }}</td>
-                <td class="p-2 px-3 align-middle">
-                  <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium" :class="crop.status === '启用' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
-                    {{ crop.status }}
-                  </span>
-                </td>
-                <td class="p-2 px-3 align-middle text-right">
-                  <div class="flex items-center justify-end gap-1">
-                    <Pencil class="h-4 w-4 text-muted-foreground hover:text-primary cursor-pointer" @click.stop="goToForm(crop.categoryCode)" />
-                    <Trash2 class="h-4 w-4 text-muted-foreground hover:text-destructive cursor-pointer" @click.stop />
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <!-- 分页 -->
-        <div class="flex items-center justify-between border-t px-2 py-3">
-          <p class="text-sm text-muted-foreground">
-            第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ crops.length }}</span> 条记录
-          </p>
-          <div class="flex items-center gap-1">
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="currentPage <= 1"
-              @click="currentPage = 1"
+    <div class="rounded-lg border bg-card shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b bg-muted/50">
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">作物大类</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">作物类别</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">作物品种</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">生长周期</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">适宜季节</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">种植区域</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">土壤类型</th>
+              <th class="h-10 px-4 text-center font-medium text-muted-foreground">状态</th>
+              <th class="h-10 px-4 text-center font-medium text-muted-foreground">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="crop in paginatedCrops"
+              :key="crop.id"
+              class="border-b transition-colors hover:bg-muted/30 cursor-pointer"
+              @click="goToForm(crop.categoryCode)"
             >
-              <ChevronsLeft class="h-4 w-4" />
-            </button>
+              <td class="h-12 px-4 text-muted-foreground">{{ crop.type }}</td>
+              <td class="h-12 px-4">
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium" :class="categoryClass(crop.categoryCode)">{{ crop.category }}</span>
+              </td>
+              <td class="h-12 px-4 font-medium">{{ crop.variety }}</td>
+              <td class="h-12 px-4">{{ crop.growthCycle }}</td>
+              <td class="h-12 px-4">{{ crop.season }}</td>
+              <td class="h-12 px-4">{{ crop.region }}</td>
+              <td class="h-12 px-4">{{ crop.soilType }}</td>
+              <td class="h-12 px-4 text-center">
+                <span class="inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium" :class="crop.status === '启用' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'">
+                  {{ crop.status }}
+                </span>
+              </td>
+              <td class="h-12 px-4 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <button class="text-primary hover:underline" @click.stop="goToForm(crop.categoryCode)">编辑</button>
+                  <button class="text-destructive hover:underline" @click.stop>删除</button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="crops.length === 0">
+              <td colspan="9" class="h-24 text-center text-muted-foreground">暂无数据</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- 分页 -->
+      <div class="flex items-center justify-between border-t px-4 py-3">
+        <p class="text-sm text-muted-foreground">第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ crops.length }}</span> 条记录</p>
+        <div class="flex items-center gap-1">
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="currentPage === 1"
+            @click="currentPage--"
+          >
+            <ChevronLeft class="h-4 w-4" />
+          </button>
+          <template v-for="p in visiblePages" :key="p">
             <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="currentPage <= 1"
-              @click="currentPage--"
-            >
-              <ChevronLeft class="h-4 w-4" />
-            </button>
-            <button
-              v-for="page in visiblePages"
-              :key="page"
+              v-if="p !== '...'"
               class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors"
-              :class="page === currentPage ? 'bg-primary text-primary-foreground border-primary' : 'hover:bg-muted'"
-              @click="currentPage = page"
+              :class="p === currentPage ? 'border-primary bg-primary text-primary-foreground' : 'hover:bg-muted'"
+              @click="currentPage = p as number"
             >
-              {{ page }}
+              {{ p }}
             </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage++"
-            >
-              <ChevronRight class="h-4 w-4" />
-            </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="currentPage >= totalPages"
-              @click="currentPage = totalPages"
-            >
-              <ChevronsRight class="h-4 w-4" />
-            </button>
-          </div>
+            <span v-else class="px-1 text-muted-foreground">...</span>
+          </template>
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="currentPage === totalPages"
+            @click="currentPage++"
+          >
+            <ChevronRight class="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>
@@ -167,7 +153,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { Plus, Wheat, Layers, MapPin, CheckCircle, Pencil, Trash2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
+import { Plus, Wheat, Layers, MapPin, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 const router = useRouter()
 
@@ -215,14 +201,16 @@ const paginatedCrops = computed(() => {
 const visiblePages = computed(() => {
   const total = totalPages.value
   const current = currentPage.value
-  const pages: number[] = []
-  const maxVisible = 5
-  let start = Math.max(1, current - Math.floor(maxVisible / 2))
-  const end = Math.min(total, start + maxVisible - 1)
-  start = Math.max(1, end - maxVisible + 1)
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
+  if (total <= 5) {
+    return Array.from({ length: total }, (_, i) => i + 1)
   }
+  const pages: (number | string)[] = [1]
+  if (current > 3) pages.push('...')
+  const start = Math.max(2, current - 1)
+  const end = Math.min(total - 1, current + 1)
+  for (let i = start; i <= end; i++) pages.push(i)
+  if (current < total - 2) pages.push('...')
+  pages.push(total)
   return pages
 })
 
