@@ -16,37 +16,40 @@
     </div>  
 
     <!-- 查询条件 -->
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div class="p-6 pb-4">
-        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          <!-- 年份 -->
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted-foreground">年份</label>
-            <select
-              v-model="filters.year"
-              class="h-9 w-auto rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="">全部</option>
-              <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
-            </select>
-          </div>
-          <!-- 所属单位（树形） -->
-          <div class="relative">
-            <label class="mb-1.5 block text-sm font-medium text-muted-foreground">所属单位</label>
-            <div
-              class="flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+    <div class="rounded-lg border bg-card p-4 shadow-sm">
+      <div class="flex flex-wrap items-end gap-4">
+        <!-- 年份 -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-muted-foreground">年份</label>
+          <select
+            v-model="filters.year"
+            class="h-9 w-36 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部</option>
+            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
+        <!-- 所属单位（树形） -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-muted-foreground">所属单位</label>
+          <div class="relative unit-tree-dropdown">
+            <button
+              type="button"
+              class="flex h-9 min-w-[200px] items-center justify-between rounded-md border bg-background px-3 text-sm hover:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              :class="filters.org ? '' : 'text-muted-foreground'"
               @click="showOrgTree = !showOrgTree"
             >
-              <span :class="filters.org ? '' : 'text-muted-foreground'">{{ filters.org || '全部' }}</span>
-              <ChevronDown class="h-4 w-4 text-muted-foreground" />
-            </div>
+              <span class="truncate">{{ filters.org || '全部' }}</span>
+              <ChevronDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </button>
             <div
               v-if="showOrgTree"
-              class="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] rounded-md border bg-card shadow-lg"
+              class="absolute left-0 top-full z-50 mt-1 w-full min-w-[260px] overflow-auto rounded-md border bg-card shadow-lg"
             >
               <div class="p-2">
                 <div
                   class="cursor-pointer rounded px-2 py-1.5 text-sm hover:bg-muted"
+                  :class="filters.org === '' ? 'bg-primary/10 font-medium text-primary' : ''"
                   @click="selectOrg('')"
                 >
                   全部
@@ -57,16 +60,17 @@
                     @click.stop="toggleOrgNode(org.label)"
                   >
                     <ChevronRight
-                      class="h-3.5 w-3.5 transition-transform"
+                      class="h-3.5 w-3.5 transition-transform shrink-0"
                       :class="expandedOrgs.includes(org.label) ? 'rotate-90' : ''"
                     />
-                    {{ org.label }}
+                    <span class="truncate" :class="filters.org === org.label ? 'text-primary' : ''">{{ org.label }}</span>
                   </div>
                   <template v-if="expandedOrgs.includes(org.label)">
                     <div
                       v-for="child in org.children"
                       :key="child"
                       class="cursor-pointer rounded py-1.5 pl-8 pr-2 text-sm hover:bg-muted"
+                      :class="filters.org === child ? 'bg-primary/10 text-primary font-medium' : ''"
                       @click="selectOrg(child)"
                     >
                       {{ child }}
@@ -76,69 +80,67 @@
               </div>
             </div>
           </div>
-          <!-- 种植模式 -->
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted-foreground">种植模式</label>
+        </div>
+        <!-- 种植模式 -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-muted-foreground">种植模式</label>
+          <select
+            v-model="filters.plantingMode"
+            class="h-9 min-w-[120px] rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部</option>
+            <option value="露地种植">露地种植</option>
+            <option value="设施种植">设施种植</option>
+          </select>
+        </div>
+        <!-- 作物大类 + 作物品种 -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-muted-foreground">作物大类 / 品种</label>
+          <div class="flex gap-1">
             <select
-              v-model="filters.plantingMode"
-              class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              v-model="filters.cropCategory"
+              class="h-9 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              @change="filters.cropVariety = ''"
             >
-              <option value="">全部</option>
-              <option value="露地种植">露地种植</option>
-              <option value="设施种植">设施种植</option>
+              <option value="">全部大类</option>
+              <option v-for="c in cropCategories" :key="c" :value="c">{{ c }}</option>
             </select>
-          </div>
-          <!-- 作物大类 + 作物品种 -->
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted-foreground">作物大类 / 品种</label>
-            <div class="flex gap-1">
-              <select
-                v-model="filters.cropCategory"
-                class="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-                @change="filters.cropVariety = ''"
-              >
-                <option value="">全部大类</option>
-                <option v-for="c in cropCategories" :key="c" :value="c">{{ c }}</option>
-              </select>
-              <select
-                v-model="filters.cropVariety"
-                class="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-                :disabled="!filters.cropCategory"
-              >
-                <option value="">全部品种</option>
-                <option v-for="v in cropVarietyOptions" :key="v" :value="v">{{ v }}</option>
-              </select>
-            </div>
-          </div>
-          <!-- 生效状态 -->
-          <div>
-            <label class="mb-1.5 block text-sm font-medium text-muted-foreground">生效状态</label>
             <select
-              v-model="filters.status"
-              class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              v-model="filters.cropVariety"
+              class="h-9 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              :disabled="!filters.cropCategory"
             >
-              <option value="">全部</option>
-              <option value="active">执行中</option>
-              <option value="review">审核中</option>
-              <option value="draft">草稿</option>
-              <option value="returned">已退回</option>
-              <option value="archived">已归档</option>
+              <option value="">全部品种</option>
+              <option v-for="v in cropVarietyOptions" :key="v" :value="v">{{ v }}</option>
             </select>
           </div>
         </div>
-        <div class="mt-4 flex items-center gap-2">
+        <!-- 生效状态 -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-muted-foreground">生效状态</label>
+          <select
+            v-model="filters.status"
+            class="h-9 min-w-[120px] rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部</option>
+            <option value="active">执行中</option>
+            <option value="review">审核中</option>
+            <option value="draft">草稿</option>
+            <option value="returned">已退回</option>
+            <option value="archived">已归档</option>
+          </select>
+        </div>
+        <div class="flex gap-2">
           <button
-            class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+            class="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
             @click="currentPage = 1"
           >
-            <Search class="h-3.5 w-3.5" />
             查询
           </button>
           <button
-            class="inline-flex items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
+            class="h-9 rounded-md border px-4 text-sm font-medium hover:bg-muted"
             @click="resetFilters"
           >
-            <RotateCcw class="h-3.5 w-3.5" />
             重置
           </button>
         </div>
@@ -146,81 +148,73 @@
     </div>
 
     <!-- 方案列表 -->
-    <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div class="flex items-center justify-between p-6 pb-4">
-        <div>
-          <h3 class="text-lg font-semibold leading-none tracking-tight">方案列表</h3>
-          <p class="mt-1 text-sm text-muted-foreground">共 {{ filteredSchemes.length }} 条记录</p>
-        </div>
-      </div>
-      <div class="px-6 pb-2">
-        <div class="relative w-full overflow-auto">
-          <table class="w-full caption-bottom text-sm">
-            <thead class="[&_tr]:border-b">
-              <tr class="border-b transition-colors hover:bg-muted/50">
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground" style="width: 130px">编号</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">方案名称</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">所属单位</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">种植模式</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">作物大类</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">作物品种</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">季节</th>
-                <th class="h-10 px-2 text-right align-middle font-medium text-muted-foreground">面积(亩)</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">产量目标</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">生效状态</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">版本</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">创建人</th>
-                <th class="h-10 px-2 text-left align-middle font-medium text-muted-foreground">创建日期</th>
-              </tr>
-            </thead>
-            <tbody class="[&_tr:last-child]:border-0">
-              <tr
-                v-for="item in paginatedItems"
-                :key="item.scheme.id + '-v' + item.scheme.version"
-                class="border-b transition-colors hover:bg-muted/50 cursor-pointer"
-                @click="handleViewVersion(item.scheme)"
-              >
-                <td class="p-2 align-middle font-mono text-xs">{{ item.scheme.id }}</td>
-                <td class="p-2 align-middle font-medium">{{ item.scheme.name }}</td>
-                <td class="p-2 align-middle text-muted-foreground text-xs">{{ item.scheme.unit }}</td>
-                <td class="p-2 align-middle text-muted-foreground">{{ item.scheme.plantingMode }}</td>
-                <td class="p-2 align-middle">
-                  <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-normal">{{ item.scheme.cropCategory }}</span>
-                </td>
-                <td class="p-2 align-middle text-muted-foreground">{{ item.scheme.cropVariety }}</td>
-                <td class="p-2 align-middle text-muted-foreground">{{ item.scheme.season }}</td>
-                <td class="p-2 align-middle text-right">{{ item.scheme.area }}</td>
-                <td class="p-2 align-middle">{{ item.scheme.yieldTarget }}</td>
-                <td class="p-2 align-middle">
-                  <span :class="statusBadgeClass(item.scheme.status)">
-                    <component :is="statusIcon(item.scheme.status)" class="h-3 w-3" />
-                    {{ statusLabel(item.scheme.status) }}
-                  </span>
-                </td>
-                <td class="p-2 align-middle">
-                  <button
-                    class="inline-flex items-center gap-1 text-primary hover:underline text-xs font-medium"
-                    @click.stop="openVersionPanel(item.scheme)"
-                  >
-                    v{{ item.scheme.version }}
-                    <component :is="item.versions.length > 1 ? ChevronDown : Minus" class="h-3 w-3" />
-                  </button>
-                </td>
-                <td class="p-2 align-middle text-muted-foreground">{{ item.scheme.creator }}</td>
-                <td class="p-2 align-middle text-muted-foreground text-xs">{{ item.scheme.createdAt }}</td>
-              </tr>
-              <tr v-if="paginatedItems.length === 0">
-                <td colspan="13" class="p-8 text-center text-muted-foreground">暂无数据</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+    <div class="rounded-lg border bg-card shadow-sm">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b bg-muted/50">
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">编号</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">方案名称</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">所属单位</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">种植模式</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">作物大类</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">作物品种</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">季节</th>
+              <th class="h-10 px-4 text-right font-medium text-muted-foreground">面积(亩)</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">产量目标</th>
+              <th class="h-10 px-4 text-center font-medium text-muted-foreground">生效状态</th>
+              <th class="h-10 px-4 text-center font-medium text-muted-foreground">版本</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">创建人</th>
+              <th class="h-10 px-4 text-left font-medium text-muted-foreground">创建日期</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in paginatedItems"
+              :key="item.scheme.id + '-v' + item.scheme.version"
+              class="border-b transition-colors hover:bg-muted/30 cursor-pointer"
+              @click="handleViewVersion(item.scheme)"
+            >
+              <td class="h-12 px-4 font-mono text-xs">{{ item.scheme.id }}</td>
+              <td class="h-12 px-4 font-medium">{{ item.scheme.name }}</td>
+              <td class="h-12 px-4 text-muted-foreground text-xs">{{ item.scheme.unit }}</td>
+              <td class="h-12 px-4 text-muted-foreground">{{ item.scheme.plantingMode }}</td>
+              <td class="h-12 px-4">
+                <span class="inline-flex items-center rounded-md border px-2.5 py-0.5 text-xs font-normal">{{ item.scheme.cropCategory }}</span>
+              </td>
+              <td class="h-12 px-4 text-muted-foreground">{{ item.scheme.cropVariety }}</td>
+              <td class="h-12 px-4 text-muted-foreground">{{ item.scheme.season }}</td>
+              <td class="h-12 px-4 text-right">{{ item.scheme.area }}</td>
+              <td class="h-12 px-4">{{ item.scheme.yieldTarget }}</td>
+              <td class="h-12 px-4 text-center">
+                <span :class="statusBadgeClass(item.scheme.status)">
+                  <component :is="statusIcon(item.scheme.status)" class="h-3 w-3" />
+                  {{ statusLabel(item.scheme.status) }}
+                </span>
+              </td>
+              <td class="h-12 px-4 text-center">
+                <button
+                  class="inline-flex items-center gap-1 text-primary hover:underline text-xs font-medium"
+                  @click.stop="openVersionPanel(item.scheme)"
+                >
+                  v{{ item.scheme.version }}
+                  <component :is="item.versions.length > 1 ? ChevronDown : Minus" class="h-3 w-3" />
+                </button>
+              </td>
+              <td class="h-12 px-4 text-muted-foreground">{{ item.scheme.creator }}</td>
+              <td class="h-12 px-4 text-muted-foreground text-xs">{{ item.scheme.createdAt }}</td>
+            </tr>
+            <tr v-if="paginatedItems.length === 0">
+              <td colspan="13" class="h-24 text-center text-muted-foreground">暂无数据</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- 分页 -->
-      <div v-if="totalPages > 1" class="flex items-center justify-between border-t px-6 py-3">
+      <div v-if="totalPages > 1" class="flex items-center justify-between border-t px-4 py-3">
         <p class="text-sm text-muted-foreground">
-          第 {{ currentPage }} / {{ totalPages }} 页，共 {{ filteredSchemes.length }} 条
+          第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ filteredSchemes.length }} </span> 条记录
         </p>
         <div class="flex items-center gap-1">
           <button
@@ -301,7 +295,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Plus, FileText, CheckCircle2, Clock, AlertCircle,
-  Search, RotateCcw, ChevronDown, ChevronLeft, ChevronRight, ChevronRight as ChevronRightIcon, X, Minus,
+  ChevronDown, ChevronLeft, ChevronRight, ChevronRight as ChevronRightIcon, X, Minus,
   Send, CornerDownLeft
 } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
@@ -362,7 +356,7 @@ function selectOrg(name: string) {
 // 点击外部关闭树形下拉
 function handleClickOutside(e: MouseEvent) {
   const target = e.target as HTMLElement
-  if (!target.closest('.relative')) {
+  if (!target.closest('.unit-tree-dropdown')) {
     showOrgTree.value = false
   }
 }

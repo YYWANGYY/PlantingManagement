@@ -66,10 +66,6 @@
 
     <!-- 作物列表 -->
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <div class="flex flex-col space-y-1.5 p-6">
-        <h3 class="text-lg font-semibold leading-none tracking-tight">作物列表</h3>
-        <p class="text-sm text-muted-foreground">所有作物的品种信息和种植属性</p>
-      </div>
       <div class="p-6 pt-0">
         <div class="relative w-full overflow-auto">
           <table class="w-full caption-bottom text-sm">
@@ -121,7 +117,7 @@
         <!-- 分页 -->
         <div class="flex items-center justify-between border-t px-2 py-3">
           <p class="text-sm text-muted-foreground">
-            共 <span class="font-medium">{{ crops.length }}</span> 条记录，第 {{ currentPage }} / {{ totalPages }} 页
+            第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ crops.length }}</span> 条记录
           </p>
           <div class="flex items-center gap-1">
             <button

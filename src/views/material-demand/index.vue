@@ -203,7 +203,7 @@
       </div>
       <!-- 分页 -->
       <div class="flex items-center justify-between border-t px-4 py-3">
-        <p class="text-sm text-muted-foreground">第 {{ currentPage }} / {{ totalPages }} 页，共 {{ filteredList.length }} 条</p>
+        <p class="text-sm text-muted-foreground">第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ filteredList.length }} </span> 条记录</p>
         <div class="flex items-center gap-1">
           <button
             class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
