@@ -131,6 +131,7 @@
           >
             <option value="">全部</option>
             <option value="not_effective">未生效</option>
+            <option value="pending_issue">待下发</option>
             <option value="executing">执行中</option>
             <option value="partial_done">部分完成</option>
             <option value="all_done">全部完成</option>
@@ -176,6 +177,7 @@
               <th class="h-10 px-4 text-center font-medium text-muted-foreground">审批状态</th>
               <th class="h-10 px-4 text-left font-medium text-muted-foreground">生效时间</th>
               <th class="h-10 px-4 text-center font-medium text-muted-foreground">进度状态</th>
+              <th class="h-10 px-4 text-center font-medium text-muted-foreground">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -209,9 +211,19 @@
                   {{ progressStatusLabel(item.progressStatus) }}
                 </span>
               </td>
+              <td class="h-12 px-4 text-center">
+                <button
+                  v-if="item.progressStatus === 'pending_issue'"
+                  class="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                  @click="handleIssueTask(item)"
+                >
+                  任务下发
+                </button>
+                <span v-else class="text-sm text-muted-foreground">-</span>
+              </td>
             </tr>
             <tr v-if="filteredItems.length === 0">
-              <td colspan="13" class="h-24 text-center text-muted-foreground">暂无数据</td>
+              <td colspan="14" class="h-24 text-center text-muted-foreground">暂无数据</td>
             </tr>
           </tbody>
         </table>
@@ -352,12 +364,13 @@ import {
   ChevronDown, ChevronLeft, ChevronRight, ChevronRight as ChevronRightIcon,
   ChevronsLeft, ChevronsRight, Minus, Plus, X, Search,
 } from 'lucide-vue-next'
+import { showToast } from '@/lib/toast'
 
 const router = useRouter()
 
 // ==================== 类型定义 ====================
 type ApprovalStatus = 'draft' | 'review' | 'returned' | 'revoked' | 'forced_end' | 'completed'
-type ProgressStatus = 'not_effective' | 'executing' | 'partial_done' | 'all_done' | 'archived' | 'voided'
+type ProgressStatus = 'not_effective' | 'pending_issue' | 'executing' | 'partial_done' | 'all_done' | 'archived' | 'voided'
 
 interface ScheduleItem {
   id: string
@@ -510,6 +523,7 @@ function approvalBadgeClass(status: ApprovalStatus): string {
 function progressStatusLabel(status: ProgressStatus): string {
   const map: Record<ProgressStatus, string> = {
     not_effective: '未生效',
+    pending_issue: '待下发',
     executing: '执行中',
     partial_done: '部分完成',
     all_done: '全部完成',
@@ -523,6 +537,7 @@ function progressBadgeClass(status: ProgressStatus): string {
   const base = 'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium'
   const map: Record<ProgressStatus, string> = {
     not_effective: 'bg-gray-100 text-gray-600',
+    pending_issue: 'bg-blue-50 text-blue-600',
     executing: 'bg-blue-100 text-blue-700',
     partial_done: 'bg-amber-100 text-amber-700',
     all_done: 'bg-green-100 text-green-700',
@@ -533,14 +548,14 @@ function progressBadgeClass(status: ProgressStatus): string {
 }
 
 // ==================== 模拟数据 ====================
-const allItems: ScheduleItem[] = [
+const allItems = ref<ScheduleItem[]>([
   { id: '1', year: 2026, planCode: 'ZJ-2026-001', planName: '水稻智能灌溉计划', unit: '松北农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '籼稻', totalArea: 5000, resourceCount: 8, execLeader: '刘场长', approvalStatus: 'draft', effectiveTime: '', progressStatus: 'not_effective', planProgress: 0 },
-  { id: '2', year: 2026, planCode: 'ZJ-2026-002', planName: '大豆窄行密植计划', unit: '双城分场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '杂交稻',totalArea: 3200, resourceCount: 5, execLeader: '陈主管', approvalStatus: 'draft', effectiveTime: '', progressStatus: 'not_effective', planProgress: 0 },
+  { id: '2', year: 2026, planCode: 'ZJ-2026-002', planName: '大豆窄行密植计划', unit: '双城分场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '杂交稻', totalArea: 3200, resourceCount: 5, execLeader: '陈主管', approvalStatus: 'completed', effectiveTime: '2026-04-01', progressStatus: 'pending_issue', planProgress: 0 },
   { id: '3', year: 2026, planCode: 'ZJ-2026-003', planName: '油菜机械化种植计划', unit: '辽中分场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '强筋小麦',totalArea: 2800, resourceCount: 6, execLeader: '孙经理', approvalStatus: 'completed', effectiveTime: '2026-03-01', progressStatus: 'executing', planProgress: 35 },
   { id: '4', year: 2026, planCode: 'ZJ-2026-004', planName: '棉花滴灌种植计划', unit: '法库分场', plantingMode: '设施种植', cropCategory: '小麦', cropVariety: '中筋小麦',totalArea: 4500, resourceCount: 9, execLeader: '周场长', approvalStatus: 'review', effectiveTime: '', progressStatus: 'not_effective', planProgress: 0 },
   { id: '5', year: 2026, planCode: 'ZJ-2026-005', planName: '番茄无土栽培计划', unit: '阿城农场', plantingMode: '设施种植', cropCategory: '玉米',cropVariety: '甜玉米', totalArea: 1200, resourceCount: 7, execLeader: '吴主管', approvalStatus: 'completed', effectiveTime: '2026-03-10', progressStatus: 'partial_done', planProgress: 60 },
   { id: '6', year: 2025, planCode: 'ZJ-2025-001', planName: '春季水稻高产计划', unit: '松北农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '籼稻', totalArea: 5500, resourceCount: 10, execLeader: '刘场长', approvalStatus: 'completed', effectiveTime: '2025-03-01', progressStatus: 'all_done', planProgress: 100 },
-  { id: '7', year: 2025, planCode: 'ZJ-2025-002', planName: '小麦冬灌计划', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '糯稻', totalArea: 4000, resourceCount: 6, execLeader: '马经理', approvalStatus: 'review', effectiveTime: '', progressStatus: 'not_effective', planProgress: 0 },
+  { id: '7', year: 2025, planCode: 'ZJ-2025-002', planName: '小麦冬灌计划', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '糯稻', totalArea: 4000, resourceCount: 6, execLeader: '马经理', approvalStatus: 'completed', effectiveTime: '2025-10-01', progressStatus: 'pending_issue', planProgress: 0 },
   { id: '8', year: 2025, planCode: 'ZJ-2025-003', planName: '大棚番茄种植计划', unit: '阿城农场', plantingMode: '设施种植', cropCategory: '玉米',cropVariety: '甜玉米', totalArea: 800, resourceCount: 5, execLeader: '吴主管', approvalStatus: 'completed', effectiveTime: '2025-03-01', progressStatus: 'archived', planProgress: 100 },
   { id: '9', year: 2025, planCode: 'ZJ-2025-004', planName: '苜蓿种植计划', unit: '五常分场', plantingMode: '大田种植', cropCategory: '大豆', cropVariety: '高油大豆', totalArea: 6000, resourceCount: 4, execLeader: '钱主管', approvalStatus: 'draft', effectiveTime: '', progressStatus: 'not_effective', planProgress: 0 },
   { id: '10', year: 2025, planCode: 'ZJ-2025-005', planName: '苹果矮化密植计划', unit: '苏家屯农场', plantingMode: '设施种植', cropCategory: '玉米', cropVariety: '糯玉米', totalArea: 2000, resourceCount: 8, execLeader: '冯场长', approvalStatus: 'returned', effectiveTime: '', progressStatus: 'not_effective', planProgress: 0 },
@@ -558,7 +573,7 @@ const allItems: ScheduleItem[] = [
   { id: '22', year: 2023, planCode: 'ZJ-2023-003', planName: '棉花试种计划', unit: '新民农场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '中筋小麦',totalArea: 800, resourceCount: 3, execLeader: '魏经理', approvalStatus: 'completed', effectiveTime: '2023-04-01', progressStatus: 'archived', planProgress: 100 },
   { id: '23', year: 2025, planCode: 'ZJ-2025-007', planName: '小麦良种繁育计划', unit: '呼兰农场', plantingMode: '大田种植', cropCategory: '水稻', cropVariety: '糯稻', totalArea: 3000, resourceCount: 6, execLeader: '马经理', approvalStatus: 'completed', effectiveTime: '2025-09-15', progressStatus: 'executing', planProgress: 40 },
   { id: '24', year: 2025, planCode: 'ZJ-2025-008', planName: '花生高产示范计划', unit: '双城分场', plantingMode: '大田种植', cropCategory: '小麦', cropVariety: '弱筋小麦',totalArea: 1500, resourceCount: 4, execLeader: '钱主管', approvalStatus: 'completed', effectiveTime: '2025-04-20', progressStatus: 'partial_done', planProgress: 70 },
-]
+])
 
 // ==================== 筛选逻辑 ====================
 function matchOrg(unit: string, filterOrg: string): boolean {
@@ -571,7 +586,7 @@ function matchOrg(unit: string, filterOrg: string): boolean {
 }
 
 const filteredItems = computed(() => {
-  return allItems.filter(item => {
+  return allItems.value.filter(item => {
     if (filters.value.year && item.year !== Number(filters.value.year)) return false
     if (filters.value.org && !matchOrg(item.unit, filters.value.org)) return false
     if (filters.value.plantingMode && item.plantingMode !== filters.value.plantingMode) return false
@@ -667,5 +682,15 @@ function closeSchemeDialog(): void {
   showSchemeDialog.value = false
   schemeSearch.value = ''
   selectedSchemeId.value = ''
+}
+
+// ==================== 任务下发 ====================
+function handleIssueTask(item: ScheduleItem): void {
+  const idx = allItems.value.findIndex(i => i.id === item.id)
+  if (idx !== -1) {
+    allItems.value[idx].progressStatus = 'executing'
+    allItems.value[idx].planProgress = 10
+    showToast({ message: `计划「${item.planName}」任务已下发，进度状态更新为"执行中"`, type: 'success' })
+  }
 }
 </script>
