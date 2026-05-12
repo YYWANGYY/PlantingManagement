@@ -17,7 +17,7 @@
 
     <!-- 查询条件 -->
     <div class="rounded-lg border bg-card p-4 shadow-sm">
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" :class="tab === 'region' ? 'xl:grid-cols-6' : 'xl:grid-cols-5'">
         <!-- 年份 -->
         <div class="space-y-1.5">
           <label class="text-xs font-medium text-muted-foreground">年份</label>
@@ -42,8 +42,8 @@
           </select>
         </div>
 
-        <!-- 农资大类 -->
-        <div class="space-y-1.5">
+        <!-- 农资大类（仅区域公司维度显示） -->
+        <div v-if="tab === 'region'" class="space-y-1.5">
           <label class="text-xs font-medium text-muted-foreground">农资大类</label>
           <select
             v-model="filterCategory"
@@ -60,9 +60,9 @@
           <select
             v-model="filterType"
             class="h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-            :disabled="!filterCategory"
+            :disabled="tab === 'region' && !filterCategory"
           >
-            <option value="">{{ filterCategory ? '全部品类' : '请先选择大类' }}</option>
+            <option value="">{{ (tab === 'region' && !filterCategory) ? '请先选择大类' : '全部品类' }}</option>
             <option v-for="t in typeOptions" :key="t" :value="t">{{ t }}</option>
           </select>
         </div>
@@ -255,7 +255,7 @@ const pageTitle = computed(() => {
 })
 const pageDesc = computed(() => {
   if (tab === 'region') return `${key}下辖所有需求计划的农资明细清单`
-  return `农资大类为"${key}"的所有物资明细清单`
+  return `农资大类"${key}"下所有品类的物资明细清单`
 })
 
 // 完整农资明细数据
@@ -335,7 +335,11 @@ const categoryOptions = computed(() => {
 const typeOptions = computed(() => {
   const types = new Set<string>()
   allItems.forEach(item => {
-    if (!filterCategory.value || item.category === filterCategory.value) {
+    // 按农资大类维度：品类独立可选，不受大类筛选
+    // 按区域公司维度：品类依赖大类筛选联动
+    if (tab === 'category') {
+      types.add(item.type)
+    } else if (!filterCategory.value || item.category === filterCategory.value) {
       types.add(item.type)
     }
   })
@@ -344,7 +348,7 @@ const typeOptions = computed(() => {
 
 const priorityOptions = ['高', '中', '低']
 
-// 农资大类变更时，清空品类选择
+// 农资大类变更时，清空品类选择（仅区域公司维度）
 watch(filterCategory, () => {
   filterType.value = ''
 })
@@ -392,8 +396,8 @@ const filteredItems = computed(() => {
     result = result.filter(item => item.unit === filterUnit.value)
   }
 
-  // 农资大类
-  if (filterCategory.value) {
+  // 农资大类（仅区域公司维度下可按大类二次筛选；农资大类维度已通过路由参数过滤）
+  if (tab === 'region' && filterCategory.value) {
     result = result.filter(item => item.category === filterCategory.value)
   }
 
