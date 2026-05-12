@@ -266,8 +266,15 @@
         <p class="text-sm text-muted-foreground">
           共 {{ taskList.length }} 条农事任务（与种植作业执行计划明细表一一对应）
         </p>
+        <button
+          :disabled="selectedTaskCodes.size === 0"
+          class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+          @click="openDispatchDialog('batch')"
+        >
+          <Send class="h-4 w-4" />
+          批量下发
+        </button>
       </div>
-
       <!-- 任务列表（表格） -->
       <div class="rounded-lg border">
         <div class="overflow-x-auto">
@@ -369,14 +376,7 @@
           </span>
         </div>
         <div class="flex items-center gap-2">
-          <button
-            :disabled="selectedTaskCodes.size === 0"
-            class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="openDispatchDialog('batch')"
-          >
-            <Send class="h-4 w-4" />
-            批量下发
-          </button>
+
           <div class="flex items-center gap-1">
             <button
               class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
