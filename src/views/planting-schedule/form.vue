@@ -480,66 +480,230 @@
 
     <!-- ==================== 种植单元（地块）选择弹框 ==================== -->
     <div v-if="showPlotDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showPlotDialog = false">
-      <div class="w-[720px] max-h-[80vh] rounded-lg border bg-background shadow-lg flex flex-col">
-        <!-- 弹框头部 -->
-        <div class="flex items-center justify-between border-b px-6 py-4">
-          <h3 class="text-lg font-semibold">选择种植单元（地块）</h3>
-          <button class="text-muted-foreground hover:text-foreground" @click="showPlotDialog = false">
-            <X class="h-5 w-5" />
-          </button>
-        </div>
-        <!-- 搜索 -->
-        <div class="px-6 py-3 border-b">
-          <input
-            v-model="plotSearch"
-            type="text"
-            placeholder="搜索地块名称或编码"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-        <!-- 列表 -->
-        <div class="flex-1 overflow-y-auto px-6 py-3">
-          <div class="mb-2 flex items-center justify-between">
-            <span class="text-sm text-muted-foreground">
-              当前所属单位：<span class="font-medium text-foreground">{{ form.unit }}</span>
-            </span>
-            <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
-              <input type="checkbox" :checked="allPlotsSelected" @change="toggleAllPlots" class="rounded border-input" />
-              全选
-            </label>
-          </div>
-          <div class="space-y-2">
-            <label
-              v-for="plot in filteredPlots"
-              :key="plot.id"
-              class="flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors hover:bg-muted/50"
-              :class="tempSelectedPlots.includes(plot.id) ? 'border-primary bg-primary/5' : 'border-input'"
+      <div class="w-[1100px] h-[720px] rounded-lg border bg-background shadow-lg flex flex-col">
+        <!-- 弹框头部：所属主体 + 搜索 -->
+        <div class="flex items-center justify-between border-b px-5 py-3">
+          <div class="flex items-center gap-2">
+            <span class="text-sm text-muted-foreground">当前所属主体：</span>
+            <button
+              class="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-muted"
             >
-              <input
-                type="checkbox"
-                :checked="tempSelectedPlots.includes(plot.id)"
-                @change="togglePlot(plot.id)"
-                class="rounded border-input"
-              />
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-sm font-medium">{{ plot.name }}</span>
-                  <span class="text-xs text-muted-foreground">{{ plot.code }}</span>
+              {{ currentOrgName }}
+              <ChevronDown class="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              v-model="plotGlobalSearch"
+              type="text"
+              placeholder="请输入查询内容"
+              class="h-8 w-56 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <button class="inline-flex items-center justify-center rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90">
+              <Search class="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        <!-- 主体内容：三栏布局 -->
+        <div class="flex flex-1 overflow-hidden">
+          <!-- 左侧：资源树 -->
+          <div class="w-56 border-r flex flex-col bg-muted/20">
+            <div class="px-3 py-2 border-b">
+              <span class="text-xs font-semibold text-muted-foreground uppercase tracking-wider">资源树</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-2">
+              <template v-for="org in orgTree" :key="org.id">
+                <!-- 一级：总部 -->
+                <div class="mb-1">
+                  <button
+                    class="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-sm font-medium hover:bg-muted"
+                    @click="toggleTreeNode(org.id)"
+                  >
+                    <ChevronRight
+                      class="h-3.5 w-3.5 transition-transform"
+                      :class="expandedNodes.includes(org.id) ? 'rotate-90' : ''"
+                    />
+                    {{ org.name }}
+                  </button>
+                  <!-- 二级：区域公司 -->
+                  <div v-if="expandedNodes.includes(org.id)" class="ml-4">
+                    <template v-for="company in org.children" :key="company.id">
+                      <div class="mb-0.5">
+                        <button
+                          class="flex w-full items-center gap-1.5 rounded px-2 py-1 text-sm hover:bg-muted"
+                          @click="toggleTreeNode(company.id)"
+                        >
+                          <ChevronRight
+                            class="h-3.5 w-3.5 transition-transform"
+                            :class="expandedNodes.includes(company.id) ? 'rotate-90' : ''"
+                          />
+                          {{ company.name }}
+                        </button>
+                        <!-- 三级：园区/农场 -->
+                        <div v-if="expandedNodes.includes(company.id)" class="ml-4">
+                          <template v-for="park in company.children" :key="park.id">
+                            <div class="mb-0.5">
+                              <button
+                                class="flex w-full items-center gap-1.5 rounded px-2 py-1 text-sm hover:bg-muted"
+                                :class="selectedTreeNode === park.id ? 'bg-primary/10 text-primary font-medium' : ''"
+                                @click="selectTreeNode(park.id, park.name)"
+                              >
+                                <ChevronRight
+                                  class="h-3.5 w-3.5 transition-transform"
+                                  :class="expandedNodes.includes(park.id) ? 'rotate-90' : ''"
+                                />
+                                {{ park.name }}
+                              </button>
+                              <!-- 四级：分场/地块编号 -->
+                              <div v-if="expandedNodes.includes(park.id)" class="ml-4">
+                                <button
+                                  v-for="branch in park.children"
+                                  :key="branch.id"
+                                  class="flex w-full items-center gap-1.5 rounded px-2 py-1 text-xs hover:bg-muted"
+                                  :class="selectedTreeNode === branch.id ? 'bg-primary/10 text-primary font-medium' : ''"
+                                  @click="selectTreeNode(branch.id, branch.name)"
+                                >
+                                  <MapPin class="h-3 w-3 text-muted-foreground" />
+                                  {{ branch.name }}
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
                 </div>
-                <div class="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>面积：{{ plot.area }} 亩</span>
-                  <span>类型：{{ plot.type }}</span>
-                  <span>位置：{{ plot.location }}</span>
+              </template>
+            </div>
+          </div>
+
+          <!-- 中间：天地图 -->
+          <div class="flex-1 relative bg-muted/10">
+            <div class="absolute inset-0 flex items-center justify-center">
+              <!-- 天地图占位 - 模拟卫星地图 -->
+              <div class="w-full h-full relative overflow-hidden">
+                <!-- 模拟卫星地图背景 -->
+                <div class="absolute inset-0" style="background: linear-gradient(135deg, #e8f0e4 0%, #d4e6c8 25%, #c5d9b3 50%, #b8ccaa 75%, #a8bf98 100%)"></div>
+                <!-- 模拟道路 -->
+                <div class="absolute top-1/3 left-0 right-0 h-1 bg-white/60"></div>
+                <div class="absolute top-0 bottom-0 left-1/4 w-1 bg-white/50"></div>
+                <div class="absolute top-0 bottom-0 right-1/3 w-0.5 bg-yellow-200/50"></div>
+                <!-- 模拟地块标注 -->
+                <div
+                  v-for="region in mapRegions"
+                  :key="region.id"
+                  class="absolute border-2 rounded cursor-pointer transition-all"
+                  :class="region.selected ? 'border-blue-500 bg-blue-500/10 shadow-lg' : 'border-green-600 bg-green-600/5 hover:bg-green-600/10'"
+                  :style="region.style"
+                  @click="toggleMapRegion(region.id)"
+                >
+                  <span class="absolute -top-5 left-1 text-xs font-medium whitespace-nowrap"
+                    :class="region.selected ? 'text-blue-600' : 'text-green-800'"
+                  >{{ region.label }}</span>
+                  <div v-if="region.selected" class="absolute -top-1 -left-1 h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                  <div v-if="region.selected" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                  <div v-if="region.selected" class="absolute -bottom-1 -left-1 h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                  <div v-if="region.selected" class="absolute -bottom-1 -right-1 h-2.5 w-2.5 rounded-full bg-blue-500"></div>
+                </div>
+                <!-- 地图标注文字 -->
+                <div class="absolute bottom-4 right-4 text-xs text-green-900/60">储备林苗圃</div>
+                <div class="absolute top-6 left-6 text-xs text-green-900/60">农业设施区</div>
+                <!-- 天地图标识 -->
+                <div class="absolute bottom-2 left-2 flex items-center gap-1 rounded bg-white/80 px-2 py-0.5 text-xs text-muted-foreground">
+                  <Map class="h-3.5 w-3.5" />
+                  天地图
+                </div>
+                <!-- 图例 -->
+                <div class="absolute top-3 right-3 rounded bg-white/90 border p-2 text-xs space-y-1">
+                  <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-0.5 bg-green-600"></span> 地块边界</div>
+                  <div class="flex items-center gap-1.5"><span class="inline-block w-3 h-0.5 bg-blue-500"></span> 选中地块</div>
                 </div>
               </div>
-            </label>
-            <p v-if="filteredPlots.length === 0" class="py-6 text-center text-sm text-muted-foreground">未找到匹配的地块</p>
+            </div>
+          </div>
+
+          <!-- 右侧：地块列表 -->
+          <div class="w-72 border-l flex flex-col bg-white">
+            <div class="px-4 py-3 border-b">
+              <span class="text-sm font-semibold">选择资源地块</span>
+            </div>
+            <!-- 搜索 -->
+            <div class="px-4 py-2 border-b space-y-2">
+              <input
+                v-model="plotNameSearch"
+                type="text"
+                placeholder="请输入地块名称"
+                class="h-7 w-full rounded border border-input bg-transparent px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <input
+                v-model="plotCodeSearch"
+                type="text"
+                placeholder="请输入地块编号"
+                class="h-7 w-full rounded border border-input bg-transparent px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <div class="flex gap-2">
+                <button
+                  class="flex-1 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                  @click="applyPlotFilter"
+                >查询</button>
+                <button
+                  class="flex-1 rounded border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-muted"
+                  @click="resetPlotFilter"
+                >重置</button>
+              </div>
+            </div>
+            <!-- 地块分组列表 -->
+            <div class="flex-1 overflow-y-auto px-4 py-2">
+              <div v-for="group in plotGroupedList" :key="group.code" class="mb-2">
+                <button
+                  class="flex w-full items-center gap-1.5 rounded px-2 py-1.5 text-xs font-medium hover:bg-muted"
+                  @click="togglePlotGroup(group.code)"
+                >
+                  <ChevronRight
+                    class="h-3 w-3 transition-transform"
+                    :class="expandedPlotGroups.includes(group.code) ? 'rotate-90' : ''"
+                  />
+                  {{ group.code }}
+                  <span class="text-muted-foreground">（{{ group.items.length }}）</span>
+                </button>
+                <div v-if="expandedPlotGroups.includes(group.code)" class="ml-3 space-y-1">
+                  <label
+                    v-for="plot in group.items"
+                    :key="plot.id"
+                    class="flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors hover:bg-muted/50"
+                    :class="tempSelectedPlots.includes(plot.id) ? 'bg-primary/5' : ''"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="tempSelectedPlots.includes(plot.id)"
+                      @change="togglePlot(plot.id)"
+                      class="mt-0.5 rounded border-input"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <span
+                          class="inline-flex items-center rounded px-1 py-0.5 text-[10px] font-medium"
+                          :class="plot.status === '可用' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                        >{{ plot.status }}</span>
+                        <span class="text-xs font-medium">{{ plot.name }}</span>
+                      </div>
+                      <p class="mt-0.5 text-[10px] text-muted-foreground font-mono">{{ plot.uniqueCode }}</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+              <p v-if="plotGroupedList.length === 0" class="py-8 text-center text-xs text-muted-foreground">未找到匹配的地块</p>
+            </div>
           </div>
         </div>
+
         <!-- 底部操作 -->
-        <div class="flex items-center justify-between border-t px-6 py-4">
+        <div class="flex items-center justify-between border-t px-6 py-3">
           <span class="text-sm text-muted-foreground">
-            已选择 <span class="font-medium text-foreground">{{ tempSelectedPlots.length }}</span> 个地块
+            已选择 <span class="font-medium text-foreground">{{ tempSelectedPlots.length }}</span> 个地块，
+            资产面积合计 <span class="font-medium text-foreground">{{ tempAssetArea }}</span> 亩
           </span>
           <div class="flex items-center gap-2">
             <button
@@ -552,7 +716,7 @@
               class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
               @click="confirmPlotSelection"
             >
-              确认选择
+              保存
             </button>
           </div>
         </div>
@@ -564,7 +728,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Plus, Save, Send, Trash2, Search, X } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Save, Send, Trash2, Search, X, ChevronDown, ChevronRight, MapPin, Map } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
 
 const route = useRoute()
@@ -638,49 +802,211 @@ interface PlotItem {
   type: string
   location: string
   unit: string
+  status: '可用' | '不可用'
+  uniqueCode: string
+  parentCode: string
 }
 
 const plotData: PlotItem[] = [
-  { id: 'DK001', code: 'SB-DK-001', name: '松北1号地', area: 120, type: '旱地', location: '松北平原东区', unit: '松北农场' },
-  { id: 'DK002', code: 'SB-DK-002', name: '松北2号地', area: 85, type: '水田', location: '松北平原西区', unit: '松北农场' },
-  { id: 'DK003', code: 'SB-DK-003', name: '松北3号地', area: 150, type: '水田', location: '松北平原北区', unit: '松北农场' },
-  { id: 'DK004', code: 'HL-DK-001', name: '呼兰1号地', area: 200, type: '旱地', location: '呼兰流域南段', unit: '呼兰农场' },
-  { id: 'DK005', code: 'HL-DK-002', name: '呼兰2号地', area: 95, type: '水田', location: '呼兰流域北段', unit: '呼兰农场' },
-  { id: 'DK006', code: 'XM-DK-001', name: '新民1号地', area: 180, type: '旱地', location: '新民产区中心', unit: '新民农场' },
-  { id: 'DK007', code: 'SC-DK-001', name: '双城1号地', area: 110, type: '旱地', location: '双城产区东区', unit: '双城分场' },
-  { id: 'DK008', code: 'AC-DK-001', name: '阿城设施1号棚', area: 15, type: '设施大棚', location: '阿城设施区A栋', unit: '阿城农场' },
-  { id: 'DK009', code: 'AC-DK-002', name: '阿城设施2号棚', area: 12, type: '设施大棚', location: '阿城设施区B栋', unit: '阿城农场' },
-  { id: 'DK010', code: 'LZ-DK-001', name: '辽中1号地', area: 160, type: '旱地', location: '辽中产区西区', unit: '辽中分场' },
-  { id: 'DK011', code: 'SB-DK-004', name: '松北4号地', area: 75, type: '旱地', location: '松北平原南区', unit: '松北农场' },
-  { id: 'DK012', code: 'AC-DK-003', name: '阿城设施3号棚', area: 18, type: '设施大棚', location: '阿城设施区C栋', unit: '阿城农场' },
+  { id: 'DK001', code: '京号0077', name: '良乡1号地块', area: 120, type: '旱地', location: '良乡园区东区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500001', parentCode: '京号0077' },
+  { id: 'DK002', code: '京号0077', name: '良乡2号地块', area: 85, type: '水田', location: '良乡园区西区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500002', parentCode: '京号0077' },
+  { id: 'DK003', code: '京号0077', name: '良乡3号地块', area: 95, type: '旱地', location: '良乡园区北区', unit: '良乡园区', status: '不可用', uniqueCode: '01020001011200500003', parentCode: '京号0077' },
+  { id: 'DK004', code: '京号0077', name: '良乡4号地块', area: 60, type: '水田', location: '良乡园区南区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500004', parentCode: '京号0077' },
+  { id: 'DK005', code: '京号0078', name: '长阳1号地块', area: 200, type: '旱地', location: '长阳分场中心', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500005', parentCode: '京号0078' },
+  { id: 'DK006', code: '京号0078', name: '长阳2号地块', area: 150, type: '水田', location: '长阳分场南区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500006', parentCode: '京号0078' },
+  { id: 'DK007', code: '京号0078', name: '长阳3号地块', area: 90, type: '旱地', location: '长阳分场北区', unit: '良乡园区', status: '不可用', uniqueCode: '01020001011200500007', parentCode: '京号0078' },
+  { id: 'DK008', code: '京号0079', name: '北潞上1号地块', area: 110, type: '旱地', location: '北潞上分场东区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500008', parentCode: '京号0079' },
+  { id: 'DK009', code: '京号0079', name: '北潞上2号地块', area: 75, type: '设施大棚', location: '北潞上分场西区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500009', parentCode: '京号0079' },
+  { id: 'DK010', code: '津号0001', name: '天津1号地块', area: 180, type: '旱地', location: '天津园区中心', unit: '天津园区', status: '可用', uniqueCode: '01020001021200500001', parentCode: '津号0001' },
+  { id: 'DK011', code: '津号0001', name: '天津2号地块', area: 130, type: '水田', location: '天津园区南区', unit: '天津园区', status: '可用', uniqueCode: '01020001021200500002', parentCode: '津号0001' },
+  { id: 'DK012', code: '冀号0010', name: '唐山1号地块', area: 160, type: '旱地', location: '唐山园区东区', unit: '唐山园区', status: '可用', uniqueCode: '01020001031200500001', parentCode: '冀号0010' },
+  { id: 'DK013', code: '冀号0010', name: '唐山2号地块', area: 100, type: '水田', location: '唐山园区西区', unit: '唐山园区', status: '不可用', uniqueCode: '01020001031200500002', parentCode: '冀号0010' },
+  { id: 'DK014', code: '冀号0011', name: '石家庄1号地块', area: 140, type: '旱地', location: '石家庄农场中心', unit: '石家庄农场', status: '可用', uniqueCode: '01020001031200500003', parentCode: '冀号0011' },
+  { id: 'DK015', code: '晋号0005', name: '太原1号地块', area: 170, type: '旱地', location: '太原农场北区', unit: '太原农场', status: '可用', uniqueCode: '01020001041200500001', parentCode: '晋号0005' },
 ]
 
 const showPlotDialog = ref(false)
-const plotSearch = ref('')
+const plotGlobalSearch = ref('')
+const plotNameSearch = ref('')
+const plotCodeSearch = ref('')
 const tempSelectedPlots = ref<string[]>([])
+const selectedTreeNode = ref('')
+const expandedNodes = ref<string[]>(['org-1', 'org-1-1'])
+const expandedPlotGroups = ref<string[]>(['京号0077'])
 
-// 按所属单位筛选地块
-const unitPlots = computed(() => {
-  const unit = form.value.unit
-  if (!unit) return plotData
-  return plotData.filter(p => p.unit === unit)
+// ==================== 组织架构树 ====================
+interface TreeNode {
+  id: string
+  name: string
+  children: TreeNode[]
+}
+
+const currentOrgName = ref('农发北京')
+
+const orgTree: TreeNode[] = [
+  {
+    id: 'org-1', name: '农发总部',
+    children: [
+      {
+        id: 'org-1-1', name: '北京公司',
+        children: [
+          {
+            id: 'org-1-1-1', name: '良乡园区',
+            children: [
+              { id: 'org-1-1-1-1', name: '良乡分场', children: [] },
+              { id: 'org-1-1-1-2', name: '京号0077', children: [] },
+              { id: 'org-1-1-1-3', name: '长阳分场', children: [] },
+              { id: 'org-1-1-1-4', name: '北潞上分场', children: [] },
+              { id: 'org-1-1-1-5', name: '观音寺片区', children: [] },
+            ]
+          },
+          { id: 'org-1-1-2', name: '通州园区', children: [] },
+          { id: 'org-1-1-3', name: '唐山园区', children: [] },
+          { id: 'org-1-1-4', name: '天津园区', children: [] },
+          { id: 'org-1-1-5', name: '石家庄农场', children: [] },
+          { id: 'org-1-1-6', name: '太原农场', children: [] },
+        ]
+      }
+    ]
+  }
+]
+
+function toggleTreeNode(nodeId: string): void {
+  const idx = expandedNodes.value.indexOf(nodeId)
+  if (idx >= 0) {
+    expandedNodes.value.splice(idx, 1)
+  } else {
+    expandedNodes.value.push(nodeId)
+  }
+}
+
+function selectTreeNode(nodeId: string, nodeName: string): void {
+  selectedTreeNode.value = nodeId
+  // 展开该节点
+  if (!expandedNodes.value.includes(nodeId)) {
+    expandedNodes.value.push(nodeId)
+  }
+  // 过滤地块列表：如果选中的是园区/农场节点，则按该单位过滤
+  const unitMatch = plotData.find(p => p.unit === nodeName)
+  if (unitMatch) {
+    plotNameSearch.value = ''
+    plotCodeSearch.value = ''
+  }
+}
+
+// ==================== 地图区域 ====================
+interface MapRegion {
+  id: string
+  label: string
+  selected: boolean
+  style: { top: string; left: string; width: string; height: string }
+}
+
+const mapRegions = ref<MapRegion[]>([
+  { id: 'DK001', label: '良乡1号', selected: false, style: { top: '8%', left: '10%', width: '18%', height: '22%' } },
+  { id: 'DK002', label: '良乡2号', selected: false, style: { top: '8%', left: '32%', width: '15%', height: '22%' } },
+  { id: 'DK005', label: '长阳1号', selected: false, style: { top: '35%', left: '10%', width: '25%', height: '20%' } },
+  { id: 'DK006', label: '长阳2号', selected: false, style: { top: '35%', left: '38%', width: '18%', height: '20%' } },
+  { id: 'DK008', label: '北潞上1号', selected: false, style: { top: '60%', left: '12%', width: '20%', height: '18%' } },
+  { id: 'DK009', label: '北潞上2号', selected: false, style: { top: '60%', left: '35%', width: '15%', height: '18%' } },
+  { id: 'DK010', label: '天津1号', selected: false, style: { top: '15%', left: '60%', width: '22%', height: '25%' } },
+  { id: 'DK012', label: '唐山1号', selected: false, style: { top: '50%', left: '60%', width: '20%', height: '22%' } },
+])
+
+function toggleMapRegion(regionId: string): void {
+  const region = mapRegions.value.find(r => r.id === regionId)
+  if (region) {
+    region.selected = !region.selected
+    togglePlot(regionId)
+  }
+}
+
+// 同步地图选中状态
+function syncMapSelections(): void {
+  for (const region of mapRegions.value) {
+    region.selected = tempSelectedPlots.value.includes(region.id)
+  }
+}
+
+// ==================== 地块分组列表（右侧） ====================
+const plotGroupedList = computed<{ code: string; items: PlotItem[] }[]>(() => {
+  let filtered: PlotItem[] = plotData
+
+  // 按树节点过滤
+  if (selectedTreeNode.value) {
+    const treeNode = findTreeNodeName(orgTree, selectedTreeNode.value)
+    if (treeNode) {
+      filtered = filtered.filter(p => p.unit === treeNode || p.parentCode === treeNode || p.code === treeNode)
+    }
+  }
+
+  // 按搜索条件过滤
+  if (plotNameSearch.value.trim()) {
+    const kw = plotNameSearch.value.trim().toLowerCase()
+    filtered = filtered.filter(p => p.name.toLowerCase().includes(kw))
+  }
+  if (plotCodeSearch.value.trim()) {
+    const kw = plotCodeSearch.value.trim().toLowerCase()
+    filtered = filtered.filter(p => p.code.toLowerCase().includes(kw) || p.uniqueCode.toLowerCase().includes(kw))
+  }
+  if (plotGlobalSearch.value.trim()) {
+    const kw = plotGlobalSearch.value.trim().toLowerCase()
+    filtered = filtered.filter(p =>
+      p.name.toLowerCase().includes(kw) ||
+      p.code.toLowerCase().includes(kw) ||
+      p.uniqueCode.toLowerCase().includes(kw) ||
+      p.location.toLowerCase().includes(kw)
+    )
+  }
+
+  // 按编号分组
+  const groupMap: Record<string, PlotItem[]> = {}
+  for (const p of filtered) {
+    if (!groupMap[p.code]) {
+      groupMap[p.code] = []
+    }
+    groupMap[p.code].push(p)
+  }
+
+  const result: { code: string; items: PlotItem[] }[] = []
+  Object.keys(groupMap).forEach((code) => {
+    result.push({ code, items: groupMap[code] })
+  })
+  return result
 })
 
-// 搜索过滤
-const filteredPlots = computed(() => {
-  const keyword = plotSearch.value.trim().toLowerCase()
-  if (!keyword) return unitPlots.value
-  return unitPlots.value.filter(p =>
-    p.name.toLowerCase().includes(keyword) ||
-    p.code.toLowerCase().includes(keyword)
-  )
-})
+function findTreeNodeName(tree: TreeNode[], targetId: string): string {
+  for (const node of tree) {
+    if (node.id === targetId) return node.name
+    if (node.children.length > 0) {
+      const found = findTreeNodeName(node.children, targetId)
+      if (found) return found
+    }
+  }
+  return ''
+}
 
-const allPlotsSelected = computed(() => {
-  if (filteredPlots.value.length === 0) return false
-  return filteredPlots.value.every(p => tempSelectedPlots.value.includes(p.id))
-})
+function togglePlotGroup(code: string): void {
+  const idx = expandedPlotGroups.value.indexOf(code)
+  if (idx >= 0) {
+    expandedPlotGroups.value.splice(idx, 1)
+  } else {
+    expandedPlotGroups.value.push(code)
+  }
+}
 
+function applyPlotFilter(): void {
+  // 计算属性会自动响应搜索条件变化
+}
+
+function resetPlotFilter(): void {
+  plotNameSearch.value = ''
+  plotCodeSearch.value = ''
+  plotGlobalSearch.value = ''
+  selectedTreeNode.value = ''
+}
+
+// ==================== 地块选择操作 ====================
 function togglePlot(plotId: string): void {
   const idx = tempSelectedPlots.value.indexOf(plotId)
   if (idx >= 0) {
@@ -688,28 +1014,21 @@ function togglePlot(plotId: string): void {
   } else {
     tempSelectedPlots.value.push(plotId)
   }
-}
-
-function toggleAllPlots(): void {
-  if (allPlotsSelected.value) {
-    // 取消当前过滤列表中的所有
-    const filteredIds = filteredPlots.value.map(p => p.id)
-    tempSelectedPlots.value = tempSelectedPlots.value.filter(id => !filteredIds.includes(id))
-  } else {
-    // 选中当前过滤列表中的所有
-    const existingIds = new Set(tempSelectedPlots.value)
-    for (const p of filteredPlots.value) {
-      if (!existingIds.has(p.id)) {
-        tempSelectedPlots.value.push(p.id)
-      }
-    }
-  }
+  syncMapSelections()
 }
 
 function confirmPlotSelection(): void {
   form.value.selectedPlots = [...tempSelectedPlots.value]
   showPlotDialog.value = false
 }
+
+// 临时选中地块面积合计
+const tempAssetArea = computed(() => {
+  if (tempSelectedPlots.value.length === 0) return 0
+  return plotData
+    .filter(p => tempSelectedPlots.value.includes(p.id))
+    .reduce((sum, p) => sum + p.area, 0)
+})
 
 // 已选地块名称展示
 const selectedPlotNames = computed(() => {
@@ -984,7 +1303,10 @@ function goBack(): void {
 watch(showPlotDialog, (val) => {
   if (val) {
     tempSelectedPlots.value = [...form.value.selectedPlots]
-    plotSearch.value = ''
+    plotGlobalSearch.value = ''
+    plotNameSearch.value = ''
+    plotCodeSearch.value = ''
+    syncMapSelections()
   }
 })
 
