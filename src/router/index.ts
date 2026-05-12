@@ -22,6 +22,11 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '种植方案' },
       },
       {
+        path: 'planting-plan/form',
+        component: () => import('@/views/planting-plan/form.vue'),
+        meta: { title: '种植方案编辑', parent: '种植方案' },
+      },
+      {
         path: 'planting-schedule',
         component: () => import('@/views/planting-schedule/index.vue'),
         meta: { title: '计划清单', parent: '种植计划' },
