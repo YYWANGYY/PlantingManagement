@@ -311,7 +311,7 @@
               </div>
               <div class="mt-1 font-medium">{{ scheme.name }}</div>
             </div>
-            <span class="text-xs text-muted-foreground">v{{ scheme.version }}</span>
+            <span class="text-xs text-muted-foreground">版本号：v{{ scheme.version }}</span>
           </div>
           <div class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
             <span>种植模式：{{ scheme.plantingMode }}</span>

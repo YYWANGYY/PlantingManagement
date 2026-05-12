@@ -91,15 +91,27 @@
         </div>
       </div>
 
-      <!-- 第1行：计划编号 + 计划名称 -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- 第1行：计划编号 + 关联种植方案编号 + 种植计划名称 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div>
           <label class="mb-1.5 block text-sm font-medium">
-            种植计划编号 <span class="text-red-500">*</span>
+            计划编号 <span class="text-red-500">*</span>
             <span class="ml-2 text-xs text-muted-foreground font-normal">系统生成</span>
           </label>
           <input
             :value="form.planCode"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+          />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">
+            关联种植方案编号
+            <span class="ml-2 text-xs text-muted-foreground font-normal">自动带入</span>
+          </label>
+          <input
+            :value="form.schemeCode"
             type="text"
             readonly
             class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
@@ -118,34 +130,23 @@
         </div>
       </div>
 
-      <!-- 第2行：年份 + 所属单位 -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- 第2行：所属单位 + 种植模式 + 种植作物大类 + 种植品种 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-4">
         <div>
-          <label class="mb-1.5 block text-sm font-medium">年份 <span class="text-red-500">*</span></label>
-          <select
-            v-model="form.year"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">请选择</option>
-            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
-          </select>
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium">所属单位 <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            所属单位 <span class="text-xs text-muted-foreground font-normal">自动带入</span>
+          </label>
           <input
             :value="form.unit"
             type="text"
             readonly
             class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
           />
-          <p class="mt-1 text-xs text-muted-foreground">来源于引用的种植方案</p>
         </div>
-      </div>
-
-      <!-- 第3行：种植模式 + 作物大类 + 作物品种 -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div>
-          <label class="mb-1.5 block text-sm font-medium">种植模式</label>
+          <label class="mb-1.5 block text-sm font-medium">
+            种植模式 <span class="text-xs text-muted-foreground font-normal">自动带入</span>
+          </label>
           <input
             :value="form.plantingMode"
             type="text"
@@ -154,7 +155,9 @@
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium">种植作物大类</label>
+          <label class="mb-1.5 block text-sm font-medium">
+            种植作物大类 <span class="text-xs text-muted-foreground font-normal">自动带入</span>
+          </label>
           <input
             :value="form.cropCategory"
             type="text"
@@ -163,7 +166,9 @@
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium">种植品种</label>
+          <label class="mb-1.5 block text-sm font-medium">
+            种植品种 <span class="text-xs text-muted-foreground font-normal">自动带入</span>
+          </label>
           <input
             :value="form.cropVariety"
             type="text"
@@ -173,10 +178,51 @@
         </div>
       </div>
 
-      <!-- 第4行：计划种植面积 + 执行负责人 -->
+      <!-- 第3行：种植资源信息 + 资产面积 -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <label class="mb-1.5 block text-sm font-medium">计划种植总面积（亩）<span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            种植资源信息 <span class="text-red-500">*</span>
+            <span class="ml-2 text-xs text-muted-foreground font-normal">选择种植单元（地块）</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <input
+              :value="selectedPlotNames"
+              type="text"
+              readonly
+              placeholder="请选择种植单元（地块）"
+              class="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm cursor-not-allowed"
+            />
+            <button
+              type="button"
+              class="inline-flex items-center justify-center gap-1.5 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
+              @click="showPlotDialog = true"
+            >
+              <Search class="h-3.5 w-3.5" />
+              选择
+            </button>
+          </div>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">
+            资产面积（亩）
+            <span class="ml-2 text-xs text-muted-foreground font-normal">自动计算</span>
+          </label>
+          <input
+            :value="assetAreaDisplay"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+          />
+        </div>
+      </div>
+
+      <!-- 第4行：计划种植总面积 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">
+            计划种植总面积（亩）<span class="text-red-500">*</span>
+          </label>
           <input
             v-model.number="form.totalArea"
             type="number"
@@ -184,22 +230,18 @@
             placeholder="请输入计划种植面积"
             class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
           />
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium">执行负责人 <span class="text-red-500">*</span></label>
-          <input
-            v-model="form.execLeader"
-            type="text"
-            placeholder="请输入执行负责人"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-          />
+          <p v-if="form.totalArea && assetArea > 0 && form.totalArea > assetArea" class="mt-1 text-xs text-red-500">
+            计划种植总面积不能大于资产面积（{{ assetArea }} 亩）
+          </p>
         </div>
       </div>
 
-      <!-- 第5行：计划开始时间 + 计划结束时间 -->
+      <!-- 第5行：计划播种/定植开始时间 + 计划收获结束时间 -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <label class="mb-1.5 block text-sm font-medium">计划开始时间 <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            计划播种/定植开始时间 <span class="text-red-500">*</span>
+          </label>
           <input
             v-model="form.planStartDate"
             type="date"
@@ -207,7 +249,10 @@
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium">计划结束时间 <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            计划收获结束时间
+            <span class="ml-2 text-xs text-muted-foreground font-normal">自动代入（开始时间 + 全生育周期天数），可修改</span>
+          </label>
           <input
             v-model="form.planEndDate"
             type="date"
@@ -216,10 +261,40 @@
         </div>
       </div>
 
-      <!-- 第6行：编制人 + 编制时间 -->
+      <!-- 第6行：计划负责人 + 执行负责人 -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <label class="mb-1.5 block text-sm font-medium">编制人 <span class="text-xs text-muted-foreground font-normal">自动代入</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            计划负责人 <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="form.planLeader"
+            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">请选择计划负责人</option>
+            <option v-for="p in personnelList" :key="p.id" :value="p.name">{{ p.name }}</option>
+          </select>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">
+            执行负责人 <span class="text-red-500">*</span>
+          </label>
+          <select
+            v-model="form.execLeader"
+            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+          >
+            <option value="">请选择执行负责人</option>
+            <option v-for="p in personnelList" :key="p.id" :value="p.name">{{ p.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 第7行：创建人 + 生效时间 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">
+            创建人 <span class="text-xs text-muted-foreground font-normal">自动代入</span>
+          </label>
           <input
             :value="form.author"
             type="text"
@@ -228,26 +303,9 @@
           />
         </div>
         <div>
-          <label class="mb-1.5 block text-sm font-medium">编制时间 <span class="text-xs text-muted-foreground font-normal">自动代入</span></label>
-          <input
-            :value="form.compiledAt"
-            type="text"
-            readonly
-            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
-          />
-        </div>
-      </div>
-
-      <!-- 第7行：审批状态 + 生效时间 -->
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div>
-          <label class="mb-1.5 block text-sm font-medium">审批状态</label>
-          <div class="flex items-center h-9">
-            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-700">草稿</span>
-          </div>
-        </div>
-        <div>
-          <label class="mb-1.5 block text-sm font-medium">生效时间</label>
+          <label class="mb-1.5 block text-sm font-medium">
+            生效时间 <span class="text-red-500">*</span>
+          </label>
           <input
             v-model="form.effectiveTime"
             type="date"
@@ -419,13 +477,94 @@
         </div>
       </div>
     </div>
+
+    <!-- ==================== 种植单元（地块）选择弹框 ==================== -->
+    <div v-if="showPlotDialog" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="showPlotDialog = false">
+      <div class="w-[720px] max-h-[80vh] rounded-lg border bg-background shadow-lg flex flex-col">
+        <!-- 弹框头部 -->
+        <div class="flex items-center justify-between border-b px-6 py-4">
+          <h3 class="text-lg font-semibold">选择种植单元（地块）</h3>
+          <button class="text-muted-foreground hover:text-foreground" @click="showPlotDialog = false">
+            <X class="h-5 w-5" />
+          </button>
+        </div>
+        <!-- 搜索 -->
+        <div class="px-6 py-3 border-b">
+          <input
+            v-model="plotSearch"
+            type="text"
+            placeholder="搜索地块名称或编码"
+            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+        <!-- 列表 -->
+        <div class="flex-1 overflow-y-auto px-6 py-3">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="text-sm text-muted-foreground">
+              当前所属单位：<span class="font-medium text-foreground">{{ form.unit }}</span>
+            </span>
+            <label class="inline-flex items-center gap-2 text-sm cursor-pointer">
+              <input type="checkbox" :checked="allPlotsSelected" @change="toggleAllPlots" class="rounded border-input" />
+              全选
+            </label>
+          </div>
+          <div class="space-y-2">
+            <label
+              v-for="plot in filteredPlots"
+              :key="plot.id"
+              class="flex items-center gap-3 rounded-md border p-3 cursor-pointer transition-colors hover:bg-muted/50"
+              :class="tempSelectedPlots.includes(plot.id) ? 'border-primary bg-primary/5' : 'border-input'"
+            >
+              <input
+                type="checkbox"
+                :checked="tempSelectedPlots.includes(plot.id)"
+                @change="togglePlot(plot.id)"
+                class="rounded border-input"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium">{{ plot.name }}</span>
+                  <span class="text-xs text-muted-foreground">{{ plot.code }}</span>
+                </div>
+                <div class="mt-1 flex items-center gap-4 text-xs text-muted-foreground">
+                  <span>面积：{{ plot.area }} 亩</span>
+                  <span>类型：{{ plot.type }}</span>
+                  <span>位置：{{ plot.location }}</span>
+                </div>
+              </div>
+            </label>
+            <p v-if="filteredPlots.length === 0" class="py-6 text-center text-sm text-muted-foreground">未找到匹配的地块</p>
+          </div>
+        </div>
+        <!-- 底部操作 -->
+        <div class="flex items-center justify-between border-t px-6 py-4">
+          <span class="text-sm text-muted-foreground">
+            已选择 <span class="font-medium text-foreground">{{ tempSelectedPlots.length }}</span> 个地块
+          </span>
+          <div class="flex items-center gap-2">
+            <button
+              class="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
+              @click="showPlotDialog = false"
+            >
+              取消
+            </button>
+            <button
+              class="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
+              @click="confirmPlotSelection"
+            >
+              确认选择
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Plus, Save, Send, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Plus, Save, Send, Trash2, Search, X } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
 
 const route = useRoute()
@@ -463,9 +602,6 @@ const schemeInfo = computed(() => effectiveSchemesMap[schemeId.value] || {
   unit: '', applicableArea: '', totalDays: 0, version: 0, effectiveTime: '',
 })
 
-// ==================== 年份选项 ====================
-const yearOptions = [2026, 2025, 2024, 2023]
-
 // ==================== 选项卡 ====================
 const tabs = [
   { key: 'basic', label: '基本信息' },
@@ -492,6 +628,140 @@ function execStatusBadge(status: ExecStatus): string {
   }
   return `${base} ${map[status] || map.pending}`
 }
+
+// ==================== 地块数据（种植单元） ====================
+interface PlotItem {
+  id: string
+  code: string
+  name: string
+  area: number
+  type: string
+  location: string
+  unit: string
+}
+
+const plotData: PlotItem[] = [
+  { id: 'DK001', code: 'SB-DK-001', name: '松北1号地', area: 120, type: '旱地', location: '松北平原东区', unit: '松北农场' },
+  { id: 'DK002', code: 'SB-DK-002', name: '松北2号地', area: 85, type: '水田', location: '松北平原西区', unit: '松北农场' },
+  { id: 'DK003', code: 'SB-DK-003', name: '松北3号地', area: 150, type: '水田', location: '松北平原北区', unit: '松北农场' },
+  { id: 'DK004', code: 'HL-DK-001', name: '呼兰1号地', area: 200, type: '旱地', location: '呼兰流域南段', unit: '呼兰农场' },
+  { id: 'DK005', code: 'HL-DK-002', name: '呼兰2号地', area: 95, type: '水田', location: '呼兰流域北段', unit: '呼兰农场' },
+  { id: 'DK006', code: 'XM-DK-001', name: '新民1号地', area: 180, type: '旱地', location: '新民产区中心', unit: '新民农场' },
+  { id: 'DK007', code: 'SC-DK-001', name: '双城1号地', area: 110, type: '旱地', location: '双城产区东区', unit: '双城分场' },
+  { id: 'DK008', code: 'AC-DK-001', name: '阿城设施1号棚', area: 15, type: '设施大棚', location: '阿城设施区A栋', unit: '阿城农场' },
+  { id: 'DK009', code: 'AC-DK-002', name: '阿城设施2号棚', area: 12, type: '设施大棚', location: '阿城设施区B栋', unit: '阿城农场' },
+  { id: 'DK010', code: 'LZ-DK-001', name: '辽中1号地', area: 160, type: '旱地', location: '辽中产区西区', unit: '辽中分场' },
+  { id: 'DK011', code: 'SB-DK-004', name: '松北4号地', area: 75, type: '旱地', location: '松北平原南区', unit: '松北农场' },
+  { id: 'DK012', code: 'AC-DK-003', name: '阿城设施3号棚', area: 18, type: '设施大棚', location: '阿城设施区C栋', unit: '阿城农场' },
+]
+
+const showPlotDialog = ref(false)
+const plotSearch = ref('')
+const tempSelectedPlots = ref<string[]>([])
+
+// 按所属单位筛选地块
+const unitPlots = computed(() => {
+  const unit = form.value.unit
+  if (!unit) return plotData
+  return plotData.filter(p => p.unit === unit)
+})
+
+// 搜索过滤
+const filteredPlots = computed(() => {
+  const keyword = plotSearch.value.trim().toLowerCase()
+  if (!keyword) return unitPlots.value
+  return unitPlots.value.filter(p =>
+    p.name.toLowerCase().includes(keyword) ||
+    p.code.toLowerCase().includes(keyword)
+  )
+})
+
+const allPlotsSelected = computed(() => {
+  if (filteredPlots.value.length === 0) return false
+  return filteredPlots.value.every(p => tempSelectedPlots.value.includes(p.id))
+})
+
+function togglePlot(plotId: string): void {
+  const idx = tempSelectedPlots.value.indexOf(plotId)
+  if (idx >= 0) {
+    tempSelectedPlots.value.splice(idx, 1)
+  } else {
+    tempSelectedPlots.value.push(plotId)
+  }
+}
+
+function toggleAllPlots(): void {
+  if (allPlotsSelected.value) {
+    // 取消当前过滤列表中的所有
+    const filteredIds = filteredPlots.value.map(p => p.id)
+    tempSelectedPlots.value = tempSelectedPlots.value.filter(id => !filteredIds.includes(id))
+  } else {
+    // 选中当前过滤列表中的所有
+    const existingIds = new Set(tempSelectedPlots.value)
+    for (const p of filteredPlots.value) {
+      if (!existingIds.has(p.id)) {
+        tempSelectedPlots.value.push(p.id)
+      }
+    }
+  }
+}
+
+function confirmPlotSelection(): void {
+  form.value.selectedPlots = [...tempSelectedPlots.value]
+  showPlotDialog.value = false
+}
+
+// 已选地块名称展示
+const selectedPlotNames = computed(() => {
+  const ids = form.value.selectedPlots
+  if (ids.length === 0) return ''
+  return plotData
+    .filter(p => ids.includes(p.id))
+    .map(p => p.name)
+    .join('、')
+})
+
+// 资产面积（自动计算：选中地块面积之和）
+const assetArea = computed(() => {
+  const ids = form.value.selectedPlots
+  if (ids.length === 0) return 0
+  return plotData
+    .filter(p => ids.includes(p.id))
+    .reduce((sum, p) => sum + p.area, 0)
+})
+
+const assetAreaDisplay = computed(() => {
+  return assetArea.value > 0 ? `${assetArea.value}` : ''
+})
+
+// ==================== 人员列表（所属单位关联） ====================
+interface PersonnelItem {
+  id: string
+  name: string
+  role: string
+  unit: string
+}
+
+const personnelData: PersonnelItem[] = [
+  { id: 'P001', name: '张三', role: '场长', unit: '松北农场' },
+  { id: 'P002', name: '李四', role: '技术主管', unit: '松北农场' },
+  { id: 'P003', name: '王五', role: '农艺师', unit: '松北农场' },
+  { id: 'P004', name: '赵六', role: '场长', unit: '呼兰农场' },
+  { id: 'P005', name: '孙七', role: '技术主管', unit: '呼兰农场' },
+  { id: 'P006', name: '周八', role: '场长', unit: '新民农场' },
+  { id: 'P007', name: '吴九', role: '技术主管', unit: '新民农场' },
+  { id: 'P008', name: '郑十', role: '农艺师', unit: '双城分场' },
+  { id: 'P009', name: '刘明', role: '场长', unit: '阿城农场' },
+  { id: 'P010', name: '陈亮', role: '技术主管', unit: '阿城农场' },
+  { id: 'P011', name: '杨帆', role: '场长', unit: '辽中分场' },
+  { id: 'P012', name: '黄磊', role: '农艺师', unit: '辽中分场' },
+]
+
+const personnelList = computed(() => {
+  const unit = form.value.unit
+  if (!unit) return personnelData
+  return personnelData.filter(p => p.unit === unit)
+})
 
 // ==================== 农事作业执行计划明细 ====================
 interface FarmingExecItem {
@@ -531,18 +801,19 @@ interface MaterialPlanItem {
 // ==================== 表单数据 ====================
 interface PlanForm {
   planCode: string
+  schemeCode: string
   planName: string
-  year: number | ''
   unit: string
   plantingMode: string
   cropCategory: string
   cropVariety: string
+  selectedPlots: string[]
   totalArea: number | ''
-  execLeader: string
   planStartDate: string
   planEndDate: string
+  planLeader: string
+  execLeader: string
   author: string
-  compiledAt: string
   effectiveTime: string
   remark: string
   farmingItems: FarmingExecItem[]
@@ -551,22 +822,32 @@ interface PlanForm {
 
 const form = ref<PlanForm>({
   planCode: '',
+  schemeCode: '',
   planName: '',
-  year: new Date().getFullYear(),
   unit: schemeInfo.value.unit,
   plantingMode: schemeInfo.value.plantingMode,
   cropCategory: schemeInfo.value.cropCategory,
   cropVariety: schemeInfo.value.cropVariety,
+  selectedPlots: [],
   totalArea: '',
-  execLeader: '',
   planStartDate: '',
   planEndDate: '',
+  planLeader: '',
+  execLeader: '',
   author: '当前用户',
-  compiledAt: new Date().toLocaleDateString('zh-CN'),
   effectiveTime: '',
   remark: '',
   farmingItems: [],
   materialItems: [],
+})
+
+// ==================== 自动计算收获结束时间 ====================
+watch(() => form.value.planStartDate, (newVal) => {
+  if (newVal && schemeInfo.value.totalDays > 0) {
+    const startDate = new Date(newVal)
+    startDate.setDate(startDate.getDate() + schemeInfo.value.totalDays)
+    form.value.planEndDate = startDate.toISOString().slice(0, 10)
+  }
 })
 
 // ==================== 方案代入数据 ====================
@@ -574,6 +855,7 @@ function loadSchemeData(): void {
   const s = schemeInfo.value
   if (!s.id) return
 
+  form.value.schemeCode = s.id
   form.value.unit = s.unit
   form.value.plantingMode = s.plantingMode
   form.value.cropCategory = s.cropCategory
@@ -667,24 +949,44 @@ function handleSubmit(): void {
     showToast({ message: '请填写计划名称', type: 'error' })
     return
   }
-  if (!form.value.year) {
-    showToast({ message: '请选择年份', type: 'error' })
+  if (form.value.selectedPlots.length === 0) {
+    showToast({ message: '请选择种植资源信息', type: 'error' })
     return
   }
   if (!form.value.totalArea) {
     showToast({ message: '请输入计划种植面积', type: 'error' })
     return
   }
-  if (!form.value.execLeader) {
-    showToast({ message: '请输入执行负责人', type: 'error' })
+  if (assetArea.value > 0 && form.value.totalArea > assetArea.value) {
+    showToast({ message: '计划种植总面积不能大于资产面积', type: 'error' })
     return
   }
-  showToast({ message: '已发送至：松北分场负责人进行审批（审批人：张三、李四）', type: 'success' })
+  if (!form.value.planStartDate) {
+    showToast({ message: '请选择计划播种/定植开始时间', type: 'error' })
+    return
+  }
+  if (!form.value.planLeader) {
+    showToast({ message: '请选择计划负责人', type: 'error' })
+    return
+  }
+  if (!form.value.execLeader) {
+    showToast({ message: '请选择执行负责人', type: 'error' })
+    return
+  }
+  showToast({ message: '已发送至：' + form.value.unit + '负责人进行审批（审批人：张三、李四）', type: 'success' })
 }
 
 function goBack(): void {
   router.push('/planting-schedule')
 }
+
+// ==================== 弹框打开时同步已选 ====================
+watch(showPlotDialog, (val) => {
+  if (val) {
+    tempSelectedPlots.value = [...form.value.selectedPlots]
+    plotSearch.value = ''
+  }
+})
 
 // ==================== 初始化 ====================
 onMounted(() => {
