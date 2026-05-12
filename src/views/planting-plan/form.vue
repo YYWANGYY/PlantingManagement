@@ -113,7 +113,7 @@
             @change="onCropCategoryChange"
           >
             <option value="">请选择</option>
-            <option v-for="c in cropCategories" :key="c" :value="c">{{ c }}</option>
+            <option v-for="c in cropMajors" :key="c.code" :value="c.name">{{ c.name }}</option>
           </select>
         </div>
         <!-- 种植品种 -->
@@ -580,42 +580,99 @@ const orgTree = [
   { label: '沈阳公司', children: ['苏家屯农场', '新民农场', '辽中分场', '法库分场'] },
 ]
 
-// ==================== 作物数据 ====================
-const cropCategoryMap: Record<string, string[]> = {
-  '粮食作物': ['水稻-松粳22', '小麦-济麦22', '玉米-郑单958', '大豆-中黄13'],
-  '经济作物': ['棉花-鲁棉研28', '油菜-秦油10号', '花生-花育33'],
-  '园艺作物': ['茶叶-龙井43', '苹果-红富士', '番茄-中杂9号'],
-  '饲草作物': ['紫花苜蓿-阿尔冈金', '饲用玉米-雅玉8号'],
+// ==================== 作物数据（来源于基础管理-作物管理） ====================
+
+// 作物大类（与基础管理-作物管理数据源一致）
+interface CropMajor {
+  code: string
+  name: string
+  mode: string // field=大田种植, facility=设施农业种植
 }
-const cropCategories = computed(() => {
-  if (!form.value.plantingMode) return Object.keys(cropCategoryMap)
-  return Object.keys(cropCategoryMap)
+
+const cropMajors: CropMajor[] = [
+  { code: 'rice', name: '水稻', mode: 'field' },
+  { code: 'wheat', name: '小麦', mode: 'field' },
+  { code: 'corn', name: '玉米', mode: 'field' },
+  { code: 'soybean', name: '大豆', mode: 'field' },
+  { code: 'cotton', name: '棉花', mode: 'field' },
+  { code: 'rape', name: '油菜', mode: 'field' },
+  { code: 'peanut', name: '花生', mode: 'field' },
+  { code: 'tomato', name: '番茄', mode: 'facility' },
+  { code: 'cucumber', name: '黄瓜', mode: 'facility' },
+  { code: 'cabbage', name: '白菜', mode: 'facility' },
+  { code: 'apple', name: '苹果', mode: 'field' },
+  { code: 'grape', name: '葡萄', mode: 'field' },
+  { code: 'alfalfa', name: '紫花苜蓿', mode: 'field' },
+  { code: 'rose', name: '玫瑰', mode: 'facility' },
+]
+
+// 品种列表（与基础管理-作物管理品种数据源一致）
+interface CropVariety {
+  code: string
+  name: string
+  majorCode: string
+  status: string
+}
+
+const cropVarieties: CropVariety[] = [
+  { code: 'v1', name: 'Y两优900', majorCode: 'rice', status: '启用' },
+  { code: 'v2', name: '湘早籼45号', majorCode: 'rice', status: '启用' },
+  { code: 'v3', name: '丰两优4号', majorCode: 'rice', status: '停用' },
+  { code: 'v4', name: '郑麦9023', majorCode: 'wheat', status: '启用' },
+  { code: 'v5', name: '济麦22', majorCode: 'wheat', status: '启用' },
+  { code: 'v6', name: '先玉335', majorCode: 'corn', status: '启用' },
+  { code: 'v7', name: '登海605', majorCode: 'corn', status: '启用' },
+  { code: 'v8', name: '中黄13', majorCode: 'soybean', status: '启用' },
+  { code: 'v9', name: '合丰55', majorCode: 'soybean', status: '启用' },
+  { code: 'v10', name: '新陆早45号', majorCode: 'cotton', status: '启用' },
+  { code: 'v11', name: '中棉所49', majorCode: 'cotton', status: '停用' },
+  { code: 'v12', name: '中油杂12', majorCode: 'rape', status: '启用' },
+  { code: 'v13', name: '花育33号', majorCode: 'peanut', status: '停用' },
+  { code: 'v14', name: '金棚1号', majorCode: 'tomato', status: '启用' },
+  { code: 'v15', name: '中杂9号', majorCode: 'tomato', status: '启用' },
+  { code: 'v16', name: '津春4号', majorCode: 'cucumber', status: '启用' },
+  { code: 'v17', name: '北京新3号', majorCode: 'cabbage', status: '启用' },
+  { code: 'v18', name: '红富士', majorCode: 'apple', status: '启用' },
+  { code: 'v19', name: '嘎啦', majorCode: 'apple', status: '启用' },
+  { code: 'v20', name: '巨峰', majorCode: 'grape', status: '启用' },
+  { code: 'v21', name: '中苜1号', majorCode: 'alfalfa', status: '启用' },
+  { code: 'v22', name: '卡罗拉', majorCode: 'rose', status: '停用' },
+]
+
+// 按种植模式筛选作物大类
+const filteredCropMajors = computed(() => {
+  if (!form.value.plantingMode) return cropMajors
+  if (form.value.plantingMode === '大田种植') return cropMajors.filter(m => m.mode === 'field')
+  if (form.value.plantingMode === '设施农业种植') return cropMajors.filter(m => m.mode === 'facility')
+  return cropMajors
 })
+
+// 作物大类下拉选项
+const cropCategoryOptions = computed(() => {
+  return filteredCropMajors.value.map(m => m.name)
+})
+
+// 根据所选作物大类筛选品种（仅显示启用的品种）
 const varietyOptions = computed(() => {
   if (!form.value.cropCategory) return []
-  return cropCategoryMap[form.value.cropCategory] || []
+  const major = cropMajors.find(m => m.name === form.value.cropCategory)
+  if (!major) return []
+  return cropVarieties.filter(v => v.majorCode === major.code && v.status === '启用').map(v => v.name)
+})
+
+// 获取当前品种的编码
+const currentVarietyCode = computed(() => {
+  if (!form.value.cropCategory || !form.value.cropVariety) return ''
+  const major = cropMajors.find(m => m.name === form.value.cropCategory)
+  if (!major) return ''
+  const variety = cropVarieties.find(v => v.majorCode === major.code && v.name === form.value.cropVariety)
+  return variety?.code || ''
 })
 
 // ==================== 农事作业选项数据（来源于基础管理-作物管理） ====================
 const workMethodOptions = ['农机作业', '无人机作业', '人工作业', '智能设备作业']
 
-// 作物大类编码映射（与基础管理-作物管理数据源一致）
-const cropCategoryCodeMap: Record<string, string> = {
-  '粮食作物': 'grain', '经济作物': 'cash', '蔬菜': 'vegetable',
-  '水果': 'fruit', '牧草': 'forage', '花卉': 'flower',
-  '园艺作物': 'vegetable', '饲草作物': 'forage',
-}
-
-// 品种编码映射（与基础管理-作物管理品种数据源一致）
-const varietyCodeMap: Record<string, string> = {
-  '水稻-松粳22': 'rice', '小麦-济麦22': 'wheat', '玉米-郑单958': 'corn', '大豆-中黄13': 'soybean',
-  '棉花-鲁棉研28': 'cotton', '油菜-秦油10号': 'rape', '花生-花育33': 'peanut',
-  '茶叶-龙井43': 'tea', '苹果-红富士': 'apple', '番茄-中杂9号': 'tomato',
-  '紫花苜蓿-阿尔冈金': 'alfalfa', '饲用玉米-雅玉8号': 'corn',
-  '黄瓜-津春4号': 'cucumber', '白菜-北京新3号': 'cabbage', '葡萄-巨峰': 'grape', '玫瑰-卡罗拉': 'rose',
-}
-
-// 按作物大类编码定义农事作业数据源（来源于基础管理-作物管理）
+// 按品种编码定义农事作业数据源（来源于基础管理-作物管理）
 interface CropFarmingData {
   growthPeriods: string[]       // 生育时期
   processes: string[]          // 生产流程
@@ -626,7 +683,7 @@ interface CropFarmingData {
 }
 
 const cropFarmingDataMap: Record<string, CropFarmingData> = {
-  rice: {
+  v1: {  // 水稻
     growthPeriods: ['播种期', '出苗期', '分蘖期', '拔节期', '抽穗期', '灌浆期', '成熟期', '收获期'],
     processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
     taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '晒田'],
@@ -634,7 +691,7 @@ const cropFarmingDataMap: Record<string, CropFarmingData> = {
     envRequirements: [],
     paramStandards: ['耕深≥30cm', '播深3-5cm', '施肥深度10cm', '用药浓度0.1%', '亩用量≥50kg'],
   },
-  wheat: {
+  v2: {  // 小麦
     growthPeriods: ['播种期', '出苗期', '分蘖期', '越冬期', '返青期', '拔节期', '抽穗期', '灌浆期', '成熟期', '收获期'],
     processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
     taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '镇压'],
@@ -642,7 +699,7 @@ const cropFarmingDataMap: Record<string, CropFarmingData> = {
     envRequirements: [],
     paramStandards: ['耕深≥25cm', '播深4-5cm', '施肥深度8cm', '用药浓度0.08%', '亩播种量10-15kg'],
   },
-  corn: {
+  v3: {  // 玉米
     growthPeriods: ['播种期', '出苗期', '拔节期', '大喇叭口期', '抽雄期', '吐丝期', '灌浆期', '成熟期', '收获期'],
     processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
     taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '培土'],
@@ -650,7 +707,7 @@ const cropFarmingDataMap: Record<string, CropFarmingData> = {
     envRequirements: [],
     paramStandards: ['耕深≥30cm', '播深4-6cm', '施肥深度10cm', '用药浓度0.1%', '亩保苗4000-4500株'],
   },
-  soybean: {
+  v4: {  // 大豆
     growthPeriods: ['播种期', '出苗期', '分枝期', '开花期', '结荚期', '鼓粒期', '成熟期', '收获期'],
     processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
     taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕'],
@@ -658,7 +715,7 @@ const cropFarmingDataMap: Record<string, CropFarmingData> = {
     envRequirements: [],
     paramStandards: ['耕深≥25cm', '播深3-5cm', '施肥深度8cm', '用药浓度0.05%', '亩保苗1.5-2万株'],
   },
-  cotton: {
+  v5: {  // 棉花
     growthPeriods: ['播种期', '出苗期', '苗期', '蕾期', '花铃期', '吐絮期', '收获期'],
     processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
     taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '培土', '修剪', '化控'],
@@ -750,7 +807,17 @@ const cropFarmingDataMap: Record<string, CropFarmingData> = {
 
 // 根据作物大类和品种动态获取农事作业选项
 const currentMajorCode = computed(() => {
-  return varietyCodeMap[form.value.cropVariety] || cropCategoryCodeMap[form.value.cropCategory] || ''
+  // 先根据品种名称查找对应的majorCode（作物大类编码）
+  if (form.value.cropVariety) {
+    const variety = cropVarieties.find(v => v.name === form.value.cropVariety)
+    if (variety) return variety.majorCode
+  }
+  // 回退：根据作物大类名称查找编码
+  if (form.value.cropCategory) {
+    const major = cropMajors.find(m => m.name === form.value.cropCategory)
+    if (major) return major.code
+  }
+  return ''
 })
 
 const currentFarmingData = computed<CropFarmingData>(() => {
