@@ -6,6 +6,13 @@
         <h1 class="text-2xl font-bold tracking-tight">需求计划</h1>
         <p class="mt-1 text-sm text-muted-foreground">根据已生效的种植计划生成农资需求计划，支持调整、审批与推送</p>
       </div>
+      <button
+        class="flex h-9 items-center gap-2 rounded-md border px-4 text-sm font-medium hover:bg-muted transition-colors"
+        @click="handleExport"
+      >
+        <DownloadIcon class="h-4 w-4" />
+        导出
+      </button>
     </div>
 
     <!-- 查询条件 -->
@@ -258,7 +265,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { X, ChevronDown as ChevronDownIcon, ChevronRight as ChevronRightIcon, Building2 as Building2Icon } from 'lucide-vue-next'
+import { X, ChevronDown as ChevronDownIcon, ChevronRight as ChevronRightIcon, Building2 as Building2Icon, Download as DownloadIcon } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
 
 const router = useRouter()
@@ -438,6 +445,34 @@ function handlePush(item: DemandPlan) {
   if (idx >= 0) {
     demandPlans.value[idx].pushStatus = '已推送'
   }
+}
+
+// 导出
+function handleExport() {
+  const list = filteredList.value
+  if (list.length === 0) {
+    showToast({ title: '导出失败', message: '当前筛选结果为空，无数据可导出', type: 'warning', duration: 3000 })
+    return
+  }
+  const headers = ['年份', '所属单位', '种植计划名称', '需求计划编号', '种植计划编号', '需求总量', '缺口量', '审批状态', '推送状态', '执行状态', '优先级', '备注']
+  const keys: (keyof DemandPlan)[] = ['year', 'unit', 'planName', 'code', 'planCode', 'totalDemand', 'gap', 'approvalStatus', 'pushStatus', 'executeStatus', 'priority', 'remark']
+  const csvRows: string[] = [headers.join(',')]
+  for (const item of list) {
+    const row = keys.map(k => {
+      const val = String(item[k] ?? '')
+      return val.includes(',') || val.includes('"') ? `"${val.replace(/"/g, '""')}"` : val
+    })
+    csvRows.push(row.join(','))
+  }
+  const bom = '\uFEFF'
+  const blob = new Blob([bom + csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `需求计划_${queryYear.value || '全部'}.csv`
+  link.click()
+  URL.revokeObjectURL(url)
+  showToast({ title: '导出成功', message: `已导出 ${list.length} 条需求计划数据`, type: 'success', duration: 3000 })
 }
 
 // 进入详情

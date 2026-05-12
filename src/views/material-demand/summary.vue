@@ -20,7 +20,7 @@
               {{ totalItems }}
               <span class="text-sm font-normal text-muted-foreground">项</span>
             </p>
-            <p class="mt-0.5 text-xs text-muted-foreground/60">= 各类别物资项数之和</p>
+            <p class="mt-0.5 text-xs text-muted-foreground/60">= 各类别农资项数之和</p>
           </div>
         </div>
       </div>
@@ -208,7 +208,7 @@
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
       <div class="flex flex-col space-y-1.5 p-6">
         <h3 class="text-lg font-semibold leading-none tracking-tight">采购紧急优先级</h3>
-        <p class="text-sm text-muted-foreground">按采购紧急优先级等级分类展示，排序依据：需求使用时间 + 推送时间</p>
+        <p class="text-sm text-muted-foreground">缺口农资按采购紧急优先级等级分类展示，排序依据：需求使用时间（同农资品类最早的需用时间） + 推送时间同农资品类最早的推送时间）；</p>
       </div>
       <div class="p-6 pt-0">
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
