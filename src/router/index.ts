@@ -30,12 +30,7 @@ const routes: RouteRecordRaw[] = [
         path: 'planting-schedule',
         component: () => import('@/views/planting-schedule/index.vue'),
         meta: { title: '计划清单', parent: '种植计划' },
-      },
-      {
-        path: 'planting-schedule/monitor',
-        component: () => import('@/views/planting-schedule/monitor.vue'),
-        meta: { title: '计划监控', parent: '种植计划' },
-      },
+      },    
       {
         path: 'material-demand',
         component: () => import('@/views/material-demand/index.vue'),
@@ -76,26 +71,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/base-management/crop-form.vue'),
         meta: { title: '作物编辑', parent: '基础管理' },
       },
-      {
-        path: 'system/department',
-        component: () => import('@/views/system/department.vue'),
-        meta: { title: '部门管理', parent: '系统管理' },
-      },
-      {
-        path: 'system/personnel',
-        component: () => import('@/views/system/personnel.vue'),
-        meta: { title: '人员管理', parent: '系统管理' },
-      },
-      {
-        path: 'system/role',
-        component: () => import('@/views/system/role.vue'),
-        meta: { title: '角色管理', parent: '系统管理' },
-      },
-      {
-        path: 'system/permission',
-        component: () => import('@/views/system/permission.vue'),
-        meta: { title: '权限管理', parent: '系统管理' },
-      },
+     
       {
         path: 'system/dictionary',
         component: () => import('@/views/system/dictionary.vue'),
