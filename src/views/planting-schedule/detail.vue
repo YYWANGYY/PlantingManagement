@@ -58,6 +58,10 @@
               <p class="mt-0.5 font-mono text-sm">{{ planInfo.schemeCode }}</p>
             </div>
             <div>
+              <span class="text-xs text-muted-foreground">关联种植方案名称</span>
+              <p class="mt-0.5 font-mono text-sm">{{ planInfo.schemeCode }}</p>
+            </div>
+            <div>
               <span class="text-xs text-muted-foreground">种植计划名称</span>
               <p class="mt-0.5 text-sm font-medium">{{ planInfo.planName }}</p>
             </div>
@@ -132,7 +136,6 @@
                 <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块类型</th>
                 <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块面积(亩)</th>
                 <th class="px-4 py-2 text-left font-medium whitespace-nowrap">所属园区/农场</th>
-                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">状态</th>
               </tr>
             </thead>
             <tbody>
@@ -143,12 +146,7 @@
                 <td class="px-4 py-2">{{ r.type }}</td>
                 <td class="px-4 py-2">{{ r.area }}</td>
                 <td class="px-4 py-2">{{ r.belong }}</td>
-                <td class="px-4 py-2">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                    :class="r.status === '可用' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'">
-                    {{ r.status }}
-                  </span>
-                </td>
+               
               </tr>
             </tbody>
           </table>
@@ -260,67 +258,6 @@
           </table>
         </div>
       </div>
-
-      <!-- 分页 + 批量操作 -->
-      <div class="flex items-center justify-between px-4 py-3 border-t rounded-b-lg bg-background">
-        <div class="flex items-center gap-3">
-          <span class="text-sm text-muted-foreground">共 {{ taskList.length }} 条</span>
-          <span v-if="selectedTaskCodes.size > 0" class="text-sm text-primary font-medium">
-            已选 {{ selectedTaskCodes.size }} 条
-          </span>
-        </div>
-        <div class="flex items-center gap-2">
-          <button
-            :disabled="selectedTaskCodes.size === 0"
-            class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            @click="openDispatchDialog('batch')"
-          >
-            <Send class="h-4 w-4" />
-            批量下发
-          </button>
-          <div class="flex items-center gap-1">
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === 1"
-              @click="taskCurrentPage = 1"
-            >
-              <ChevronsLeft class="h-4 w-4" />
-            </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === 1"
-              @click="taskCurrentPage--"
-            >
-              <ChevronLeft class="h-4 w-4" />
-            </button>
-            <template v-for="page in taskVisiblePages" :key="page">
-              <span v-if="page === '...'" class="px-1 text-sm text-muted-foreground">...</span>
-              <button
-                v-else
-                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm"
-                :class="taskCurrentPage === page ? 'bg-primary text-primary-foreground border-primary' : ''"
-                @click="taskCurrentPage = page as number"
-              >
-                {{ page }}
-              </button>
-            </template>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === taskTotalPages"
-              @click="taskCurrentPage++"
-            >
-              <ChevronRight class="h-4 w-4" />
-            </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === taskTotalPages"
-              @click="taskCurrentPage = taskTotalPages"
-            >
-              <ChevronsRight class="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Tab 2: 农事任务（列表只读 + 批量下发） -->
@@ -422,6 +359,67 @@
           </table>
         </div>
       </div>
+
+      <!-- 分页 + 批量操作 -->
+      <div class="flex items-center justify-between px-4 py-3 border-t rounded-b-lg bg-background">
+        <div class="flex items-center gap-3">
+          <span class="text-sm text-muted-foreground">共 {{ taskList.length }} 条</span>
+          <span v-if="selectedTaskCodes.size > 0" class="text-sm text-primary font-medium">
+            已选 {{ selectedTaskCodes.size }} 条
+          </span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button
+            :disabled="selectedTaskCodes.size === 0"
+            class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="openDispatchDialog('batch')"
+          >
+            <Send class="h-4 w-4" />
+            批量下发
+          </button>
+          <div class="flex items-center gap-1">
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === 1"
+              @click="taskCurrentPage = 1"
+            >
+              <ChevronsLeft class="h-4 w-4" />
+            </button>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === 1"
+              @click="taskCurrentPage--"
+            >
+              <ChevronLeft class="h-4 w-4" />
+            </button>
+            <template v-for="page in taskVisiblePages" :key="page">
+              <span v-if="page === '...'" class="px-1 text-sm text-muted-foreground">...</span>
+              <button
+                v-else
+                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm"
+                :class="taskCurrentPage === page ? 'bg-primary text-primary-foreground border-primary' : ''"
+                @click="taskCurrentPage = page as number"
+              >
+                {{ page }}
+              </button>
+            </template>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === taskTotalPages"
+              @click="taskCurrentPage++"
+            >
+              <ChevronRight class="h-4 w-4" />
+            </button>
+            <button
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              :disabled="taskCurrentPage === taskTotalPages"
+              @click="taskCurrentPage = taskTotalPages"
+            >
+              <ChevronsRight class="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 下发目标选择弹框 -->
@@ -487,6 +485,7 @@ type TaskStatus = 'pending' | 'issued' | 'executing' | 'completed' | 'overdue' |
 interface PlanInfo {
   planCode: string
   schemeCode: string
+  schemeName: string
   planName: string
   unit: string
   plantingMode: string
@@ -583,6 +582,7 @@ const activeTab = ref('task') // 默认选中农事任务
 const planInfo = ref<PlanInfo>({
   planCode: '',
   schemeCode: '',
+  schemeName: '',
   planName: '',
   unit: '',
   plantingMode: '',
@@ -790,12 +790,13 @@ function loadMockData(): void {
   // 模拟计划基本信息
   planInfo.value = {
     planCode: 'ZJ2025-001',
-    schemeCode: 'FA2025-WH-001',
+    schemeCode: 'FA2025-WH-001',    
+    schemeName: '冬小麦越冬方案',
     planName: '2025年北京公司小麦种植计划',
     unit: '北京公司',
     plantingMode: '大田种植',
-    cropCategory: '粮食',
-    cropVariety: '冬小麦',
+    cropCategory: '小麦',
+    cropVariety: '强筋小麦',
     assetArea: 1200,
     planArea: 1000,
     planStartTime: '2025-03-01',
