@@ -15,6 +15,108 @@
       </button>
     </div>
 
+    <!-- 查询条件 -->
+    <div class="rounded-lg border bg-card p-4 shadow-sm">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <!-- 年份 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-muted-foreground">年份</label>
+          <select
+            v-model="filterYear"
+            class="h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部年份</option>
+            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
+          </select>
+        </div>
+
+        <!-- 所属单位 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-muted-foreground">所属单位</label>
+          <select
+            v-model="filterUnit"
+            class="h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部单位</option>
+            <option v-for="u in unitOptions" :key="u" :value="u">{{ u }}</option>
+          </select>
+        </div>
+
+        <!-- 农资大类 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-muted-foreground">农资大类</label>
+          <select
+            v-model="filterCategory"
+            class="h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部大类</option>
+            <option v-for="c in categoryOptions" :key="c" :value="c">{{ c }}</option>
+          </select>
+        </div>
+
+        <!-- 农资品类 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-muted-foreground">农资品类</label>
+          <select
+            v-model="filterType"
+            class="h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            :disabled="!filterCategory"
+          >
+            <option value="">{{ filterCategory ? '全部品类' : '请先选择大类' }}</option>
+            <option v-for="t in typeOptions" :key="t" :value="t">{{ t }}</option>
+          </select>
+        </div>
+
+        <!-- 时间段 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-muted-foreground">时间段</label>
+          <div class="flex items-center gap-1">
+            <input
+              v-model="filterDateStart"
+              type="date"
+              class="h-9 w-full rounded-md border bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+            <span class="shrink-0 text-muted-foreground">~</span>
+            <input
+              v-model="filterDateEnd"
+              type="date"
+              class="h-9 w-full rounded-md border bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+        </div>
+
+        <!-- 采购优先级 -->
+        <div class="space-y-1.5">
+          <label class="text-xs font-medium text-muted-foreground">采购优先级</label>
+          <select
+            v-model="filterPriority"
+            class="h-9 w-full rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部优先级</option>
+            <option v-for="p in priorityOptions" :key="p" :value="p">{{ p }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="mt-4 flex items-center justify-end gap-2">
+        <button
+          class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-muted"
+          @click="resetFilters"
+        >
+          <RotateCcw class="h-3.5 w-3.5" />
+          重置
+        </button>
+        <button
+          class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+          @click="currentPage = 1"
+        >
+          <Search class="h-3.5 w-3.5" />
+          查询
+        </button>
+      </div>
+    </div>
+
     <!-- 汇总统计 -->
     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <div class="rounded-lg border bg-card p-4 shadow-sm">
@@ -124,9 +226,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { ChevronLeft, ChevronRight, Search, RotateCcw } from 'lucide-vue-next'
 
 const route = useRoute()
 const router = useRouter()
@@ -136,6 +238,15 @@ const key = decodeURIComponent(route.params.key as string)
 
 const currentPage = ref(1)
 const pageSize = 10
+
+// ===== 查询条件 =====
+const filterYear = ref('')
+const filterUnit = ref('')
+const filterCategory = ref('')
+const filterType = ref('')
+const filterDateStart = ref('')
+const filterDateEnd = ref('')
+const filterPriority = ref('')
 
 // 页面标题
 const pageTitle = computed(() => {
@@ -199,19 +310,116 @@ const allItems: SummaryItem[] = [
   { unit: '长春农场（梅河口分场）', category: '农具', type: '运输车', ingredient: '农用三轮车', unitMeasure: '辆', totalDemand: 4, currentStock: 3, inTransit: 0, gap: 1, planPrice: 4500.0, demandTime: '2026-06-01 ~ 2026-06-15', priority: '低' },
 ]
 
+// ===== 筛选选项（从数据中提取） =====
+const yearOptions = computed(() => {
+  const years = new Set<string>()
+  allItems.forEach(item => {
+    const m = item.demandTime.match(/(\d{4})/)
+    if (m) years.add(m[1])
+  })
+  return Array.from(years).sort()
+})
+
+const unitOptions = computed(() => {
+  const units = new Set<string>()
+  allItems.forEach(item => units.add(item.unit))
+  return Array.from(units).sort()
+})
+
+const categoryOptions = computed(() => {
+  const cats = new Set<string>()
+  allItems.forEach(item => cats.add(item.category))
+  return Array.from(cats).sort()
+})
+
+const typeOptions = computed(() => {
+  const types = new Set<string>()
+  allItems.forEach(item => {
+    if (!filterCategory.value || item.category === filterCategory.value) {
+      types.add(item.type)
+    }
+  })
+  return Array.from(types).sort()
+})
+
+const priorityOptions = ['高', '中', '低']
+
+// 农资大类变更时，清空品类选择
+watch(filterCategory, () => {
+  filterType.value = ''
+})
+
+// 筛选条件变更时自动回到第一页
+watch([filterYear, filterUnit, filterCategory, filterType, filterDateStart, filterDateEnd, filterPriority], () => {
+  currentPage.value = 1
+})
+
+// 重置筛选
+function resetFilters() {
+  filterYear.value = ''
+  filterUnit.value = ''
+  filterCategory.value = ''
+  filterType.value = ''
+  filterDateStart.value = ''
+  filterDateEnd.value = ''
+  filterPriority.value = ''
+  currentPage.value = 1
+}
+
 // 按筛选条件过滤
 const filteredItems = computed(() => {
+  let result = allItems
+
+  // 先按路由参数过滤（区域公司 / 农资大类）
   if (tab === 'region') {
-    // 按区域公司过滤：unit 字段以区域公司下属农场开头
     const regionFarmMap: Record<string, string[]> = {
       '哈尔滨公司': ['华康农场', '北安农场', '嫩江农场'],
       '沈阳公司': ['盘锦农场', '长春农场'],
     }
     const farms = regionFarmMap[key] || []
-    return allItems.filter(item => farms.some(farm => item.unit.startsWith(farm)))
+    result = result.filter(item => farms.some(farm => item.unit.startsWith(farm)))
+  } else {
+    result = result.filter(item => item.category === key)
   }
-  // 按农资大类过滤
-  return allItems.filter(item => item.category === key)
+
+  // 年份
+  if (filterYear.value) {
+    result = result.filter(item => item.demandTime.includes(filterYear.value))
+  }
+
+  // 所属单位
+  if (filterUnit.value) {
+    result = result.filter(item => item.unit === filterUnit.value)
+  }
+
+  // 农资大类
+  if (filterCategory.value) {
+    result = result.filter(item => item.category === filterCategory.value)
+  }
+
+  // 农资品类
+  if (filterType.value) {
+    result = result.filter(item => item.type === filterType.value)
+  }
+
+  // 时间段：筛选 demandTime 起始日期落在 [filterDateStart, filterDateEnd] 范围内的
+  if (filterDateStart.value || filterDateEnd.value) {
+    result = result.filter(item => {
+      const m = item.demandTime.match(/(\d{4}-\d{2}-\d{2})/)
+      if (!m) return false
+      const startDate = m[1]
+      if (filterDateStart.value && startDate < filterDateStart.value) return false
+      if (filterDateEnd.value && startDate > filterDateEnd.value) return false
+      return true
+    })
+  }
+
+  // 采购优先级
+  if (filterPriority.value) {
+    result = result.filter(item => item.priority === filterPriority.value)
+  }
+
+  return result
 })
 
 // 满足率
