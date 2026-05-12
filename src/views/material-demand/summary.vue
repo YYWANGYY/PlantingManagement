@@ -15,23 +15,12 @@
             <Package class="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <p class="text-sm text-muted-foreground">物资总类</p>
+            <p class="text-sm text-muted-foreground">农资总类</p>
             <p class="text-2xl font-bold">
               {{ totalItems }}
               <span class="text-sm font-normal text-muted-foreground">项</span>
             </p>
-          </div>
-        </div>
-      </div>
-      <!-- 统计-满足率 -->
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-100">
-            <ChartPie class="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">满足率</p>
-            <p class="text-2xl font-bold">{{ totalFulfillRate }}%</p>
+            <p class="mt-0.5 text-xs text-muted-foreground/60">= 各类别物资项数之和</p>
           </div>
         </div>
       </div>
@@ -47,9 +36,24 @@
               {{ (totalBudget / 10000).toFixed(1) }}
               <span class="text-sm font-normal text-muted-foreground">万元</span>
             </p>
+            <p class="mt-0.5 text-xs text-muted-foreground/60">= 各类别预算总额求和 ÷ 10000</p>
           </div>
         </div>
       </div>
+      <!-- 统计-满足率 -->
+      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
+        <div class="flex items-center gap-4 p-5">
+          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+            <ChartPie class="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <p class="text-sm text-muted-foreground">满足率</p>
+            <p class="text-2xl font-bold">{{ totalFulfillRate }}%</p>
+            <p class="mt-0.5 text-xs text-muted-foreground/60">= 已满足项数 ÷ 农资总项数 × 100%</p>
+          </div>
+        </div>
+      </div>
+     
       <!-- 统计-已采购额 -->
       <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
         <div class="flex items-center gap-4 p-5">
@@ -62,6 +66,7 @@
               {{ (totalPurchased / 10000).toFixed(1) }}
               <span class="text-sm font-normal text-muted-foreground">/ {{ (totalBudget / 10000).toFixed(1) }}万</span>
             </p>
+            <p class="mt-0.5 text-xs text-muted-foreground/60">= 各类别已采购额求和 ÷ 10000</p>
           </div>
         </div>
       </div>
@@ -75,203 +80,47 @@
       </div>
       <div class="p-6 pt-0">
         <div class="space-y-4">
-          <!-- 列表-种子 -->
-          <div class="rounded-lg border p-4">
+          <div v-for="(cat, idx) in categorySummaries" :key="cat.category" class="rounded-lg border p-4">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-3">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-700 hover:bg-green-100">种子</span>
-                <span class="text-sm text-muted-foreground">{{ categorySummaries[0].totalItems }} 项物资</span>
+                <span
+                  class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                  :class="categoryStyles[idx]?.badge"
+                >{{ cat.category }}</span>
+                <span class="text-sm text-muted-foreground">{{ cat.totalItems }} 项物资</span>
               </div>
-              <span class="text-sm font-medium">{{ categorySummaries[0].fulfilledItems }}/{{ categorySummaries[0].totalItems }} 已满足</span>
+              <span class="text-sm font-medium">{{ cat.fulfilledItems }}/{{ cat.totalItems }} 已满足</span>
             </div>
             <div class="mt-3 grid grid-cols-2 gap-4">
               <div>
                 <div class="flex items-center justify-between text-xs text-muted-foreground">
                   <span>采购进度</span>
-                  <span>{{ getFulfillRate(categorySummaries[0]) }}%</span>
+                  <span>{{ getFulfillRate(cat) }}%</span>
                 </div>
                 <div class="mt-1 flex items-center gap-3">
                   <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                     <div
                       class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getFulfillRate(categorySummaries[0]) + '%' }"
+                      :style="{ width: getFulfillRate(cat) + '%' }"
                     />
                   </div>
                 </div>
+                <p class="mt-1 text-xs text-muted-foreground/60">= 已满足项数 ÷ 物资总项数 × 100%</p>
               </div>
               <div>
                 <div class="flex items-center justify-between text-xs text-muted-foreground">
                   <span>预算执行</span>
-                  <span>{{ getCostRate(categorySummaries[0]) }}% · ¥{{ categorySummaries[0].purchasedCost.toLocaleString() }}/{{ categorySummaries[0].totalCost.toLocaleString() }}</span>
+                  <span>{{ getCostRate(cat) }}% · ¥{{ cat.purchasedCost.toLocaleString() }}/{{ cat.totalCost.toLocaleString() }}</span>
                 </div>
                 <div class="mt-1 flex items-center gap-3">
                   <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
                     <div
                       class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getCostRate(categorySummaries[0]) + '%' }"
+                      :style="{ width: getCostRate(cat) + '%' }"
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
-          <!-- 列表-肥料 -->
-          <div class="rounded-lg border p-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-amber-100 text-amber-700 hover:bg-amber-100">肥料</span>
-                <span class="text-sm text-muted-foreground">{{ categorySummaries[1].totalItems }} 项物资</span>
-              </div>
-              <span class="text-sm font-medium">{{ categorySummaries[1].fulfilledItems }}/{{ categorySummaries[1].totalItems }} 已满足</span>
-            </div>
-            <div class="mt-3 grid grid-cols-2 gap-4">
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>采购进度</span>
-                  <span>{{ getFulfillRate(categorySummaries[1]) }}%</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getFulfillRate(categorySummaries[1]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>预算执行</span>
-                  <span>{{ getCostRate(categorySummaries[1]) }}% · ¥{{ categorySummaries[1].purchasedCost.toLocaleString() }}/{{ categorySummaries[1].totalCost.toLocaleString() }}</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getCostRate(categorySummaries[1]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 列表-农药 -->
-          <div class="rounded-lg border p-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-100">农药</span>
-                <span class="text-sm text-muted-foreground">{{ categorySummaries[2].totalItems }} 项物资</span>
-              </div>
-              <span class="text-sm font-medium">{{ categorySummaries[2].fulfilledItems }}/{{ categorySummaries[2].totalItems }} 已满足</span>
-            </div>
-            <div class="mt-3 grid grid-cols-2 gap-4">
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>采购进度</span>
-                  <span>{{ getFulfillRate(categorySummaries[2]) }}%</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getFulfillRate(categorySummaries[2]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>预算执行</span>
-                  <span>{{ getCostRate(categorySummaries[2]) }}% · ¥{{ categorySummaries[2].purchasedCost.toLocaleString() }}/{{ categorySummaries[2].totalCost.toLocaleString() }}</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getCostRate(categorySummaries[2]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 列表-农具 -->
-          <div class="rounded-lg border p-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-100">农具</span>
-                <span class="text-sm text-muted-foreground">{{ categorySummaries[3].totalItems }} 项物资</span>
-              </div>
-              <span class="text-sm font-medium">{{ categorySummaries[3].fulfilledItems }}/{{ categorySummaries[3].totalItems }} 已满足</span>
-            </div>
-            <div class="mt-3 grid grid-cols-2 gap-4">
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>采购进度</span>
-                  <span>{{ getFulfillRate(categorySummaries[3]) }}%</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getFulfillRate(categorySummaries[3]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>预算执行</span>
-                  <span>{{ getCostRate(categorySummaries[3]) }}% · ¥{{ categorySummaries[3].purchasedCost.toLocaleString() }}/{{ categorySummaries[3].totalCost.toLocaleString() }}</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getCostRate(categorySummaries[3]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <!-- 列表-其他 -->
-          <div class="rounded-lg border p-4">
-            <div class="flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-700 hover:bg-gray-100">其他</span>
-                <span class="text-sm text-muted-foreground">{{ categorySummaries[4].totalItems }} 项物资</span>
-              </div>
-              <span class="text-sm font-medium">{{ categorySummaries[4].fulfilledItems }}/{{ categorySummaries[4].totalItems }} 已满足</span>
-            </div>
-            <div class="mt-3 grid grid-cols-2 gap-4">
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>采购进度</span>
-                  <span>{{ getFulfillRate(categorySummaries[4]) }}%</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getFulfillRate(categorySummaries[4]) + '%' }"
-                    />
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div class="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>预算执行</span>
-                  <span>{{ getCostRate(categorySummaries[4]) }}% · ¥{{ categorySummaries[4].purchasedCost.toLocaleString() }}/{{ categorySummaries[4].totalCost.toLocaleString() }}</span>
-                </div>
-                <div class="mt-1 flex items-center gap-3">
-                  <div class="h-2 flex-1 overflow-hidden rounded-full bg-muted">
-                    <div
-                      class="h-full rounded-full bg-primary transition-all"
-                      :style="{ width: getCostRate(categorySummaries[4]) + '%' }"
-                    />
-                  </div>
-                </div>
+                <p class="mt-1 text-xs text-muted-foreground/60">= 已采购额 ÷ 预算总额 × 100%</p>
               </div>
             </div>
           </div>
@@ -293,6 +142,7 @@
               <span class="text-sm font-semibold text-red-700">紧急</span>
               <span class="text-2xl font-bold">{{ urgencySummaries[0].count }}</span>
             </div>
+            <p class="mt-1 text-xs text-muted-foreground/60">= 需7天内到货的物资项数</p>
             <div class="mt-2 space-y-1">
               <p class="text-xs text-muted-foreground">· 大豆种子</p>
               <p class="text-xs text-muted-foreground">· 氯化钾</p>
@@ -305,6 +155,7 @@
               <span class="text-sm font-semibold text-amber-700">一般</span>
               <span class="text-2xl font-bold">{{ urgencySummaries[1].count }}</span>
             </div>
+            <p class="mt-1 text-xs text-muted-foreground/60">= 需30天内到货的物资项数</p>
             <div class="mt-2 space-y-1">
               <p class="text-xs text-muted-foreground">· 尿素</p>
               <p class="text-xs text-muted-foreground">· 吡虫啉</p>
@@ -318,6 +169,7 @@
               <span class="text-sm font-semibold text-gray-600">低优先</span>
               <span class="text-2xl font-bold">{{ urgencySummaries[2].count }}</span>
             </div>
+            <p class="mt-1 text-xs text-muted-foreground/60">= 30天以上到货即可的物资项数</p>
             <div class="mt-2 space-y-1">
               <p class="text-xs text-muted-foreground">· 杂交水稻种</p>
               <p class="text-xs text-muted-foreground">· 玉米杂交种</p>
@@ -356,6 +208,14 @@ const categorySummaries: CategorySummary[] = [
   { category: '农药', totalItems: 2, fulfilledItems: 1, totalCost: 4100, purchasedCost: 2500 },
   { category: '农具', totalItems: 1, fulfilledItems: 1, totalCost: 3600, purchasedCost: 3600 },
   { category: '其他', totalItems: 1, fulfilledItems: 0, totalCost: 16000, purchasedCost: 9600 },
+]
+
+const categoryStyles = [
+  { badge: 'bg-green-100 text-green-700 hover:bg-green-100' },
+  { badge: 'bg-amber-100 text-amber-700 hover:bg-amber-100' },
+  { badge: 'bg-red-100 text-red-700 hover:bg-red-100' },
+  { badge: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
+  { badge: 'bg-gray-100 text-gray-700 hover:bg-gray-100' },
 ]
 
 const urgencySummaries: UrgencySummary[] = [
