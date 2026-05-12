@@ -347,53 +347,112 @@
         </button>
       </div>
       <div class="rounded-lg border">
-        <div class="overflow-auto">
-          <table class="w-full text-sm">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm" style="min-width:1600px">
             <thead>
               <tr class="border-b bg-muted/50">
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground" style="width:50px">序号</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">生育时期</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业项目</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业内容</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业时间</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">质量标准</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">注意事项</th>
-                <th class="h-10 px-3 text-center font-medium text-muted-foreground" style="width:60px">操作</th>
+                <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:40px">序号</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:100px">生育时期<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:100px">生产流程<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">作业环节<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">农事作业<br/>生育期天数</th>
+                <th v-if="form.plantingMode === '大田种植'" class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:80px">最小叶龄</th>
+                <th v-if="form.plantingMode === '大田种植'" class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:80px">最大叶龄</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:150px">核心农事<br/>操作标准</th>
+                <th v-if="form.plantingMode === '设施农业种植'" class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:150px">设施环境<br/>管控要求</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:130px">作业参数标准</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">作业方式<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:80px">播种类<br/>操作<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:80px">施肥类<br/>操作<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:80px">用药类<br/>操作<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:120px">备注</th>
+                <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:50px">操作</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(row, idx) in form.farmingItems" :key="idx" class="border-b">
-                <td class="p-2 align-middle text-muted-foreground">{{ idx + 1 }}</td>
-                <td class="p-2 align-middle">
-                  <input v-model="row.stage" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="如 播种期" />
+              <tr v-for="(row, idx) in form.farmingItems" :key="idx" class="border-b hover:bg-muted/30">
+                <td class="h-12 px-2 text-center text-muted-foreground">{{ idx + 1 }}</td>
+                <td class="h-12 px-2">
+                  <select v-model="row.growthPeriod" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="p in growthPeriodOptions" :key="p" :value="p">{{ p }}</option>
+                  </select>
                 </td>
-                <td class="p-2 align-middle">
-                  <input v-model="row.item" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="如 整地" />
+                <td class="h-12 px-2">
+                  <select v-model="row.process" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="p in processOptions" :key="p" :value="p">{{ p }}</option>
+                  </select>
                 </td>
-                <td class="p-2 align-middle">
-                  <input v-model="row.content" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="如 深翻30cm" />
+                <td class="h-12 px-2">
+                  <select v-model="row.taskLink" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="t in taskLinkOptions" :key="t" :value="t">{{ t }}</option>
+                  </select>
                 </td>
-                <td class="p-2 align-middle">
-                  <input v-model="row.time" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="如 3月上旬" />
+                <td class="h-12 px-2">
+                  <input v-model.number="row.farmingDays" type="number" min="0" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="天数" />
                 </td>
-                <td class="p-2 align-middle">
-                  <input v-model="row.standard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="如 耕深均匀" />
+                <td v-if="form.plantingMode === '大田种植'" class="h-12 px-2">
+                  <input v-model.number="row.minLeafAge" type="number" min="0" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="选填" />
                 </td>
-                <td class="p-2 align-middle">
-                  <input v-model="row.remark" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="如 避免雨天" />
+                <td v-if="form.plantingMode === '大田种植'" class="h-12 px-2">
+                  <input v-model.number="row.maxLeafAge" type="number" min="0" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="选填" />
                 </td>
-                <td class="p-2 align-middle text-center">
+                <td class="h-12 px-2">
+                  <input v-model="row.coreStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="操作标准" />
+                </td>
+                <td v-if="form.plantingMode === '设施农业种植'" class="h-12 px-2">
+                  <input v-model="row.envRequirement" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="环境管控要求" />
+                </td>
+                <td class="h-12 px-2">
+                  <input v-model="row.paramStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="选填" />
+                </td>
+                <td class="h-12 px-2">
+                  <select v-model="row.workMethod" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="m in workMethodOptions" :key="m" :value="m">{{ m }}</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2 text-center">
+                  <select v-model="row.isSowing" class="h-8 rounded border border-input bg-transparent px-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="否">否</option>
+                    <option value="是">是</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2 text-center">
+                  <select v-model="row.isFertilizing" class="h-8 rounded border border-input bg-transparent px-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="否">否</option>
+                    <option value="是">是</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2 text-center">
+                  <select v-model="row.isMedicating" class="h-8 rounded border border-input bg-transparent px-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="否">否</option>
+                    <option value="是">是</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2">
+                  <input v-model="row.remark" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="备注" />
+                </td>
+                <td class="h-12 px-2 text-center">
                   <button class="text-red-500 hover:text-red-700" @click="removeFarmingRow(idx)">
                     <Trash2 class="h-4 w-4" />
                   </button>
                 </td>
               </tr>
               <tr v-if="form.farmingItems.length === 0">
-                <td colspan="8" class="p-6 text-center text-muted-foreground">暂无明细，点击"添加明细"新增</td>
+                <td :colspan="farmingColspan" class="p-6 text-center text-muted-foreground">暂无明细，点击"添加明细"新增</td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+      <!-- 预计生育期天数汇总 -->
+      <div v-if="form.farmingItems.length > 0" class="flex items-center gap-4 rounded-lg border bg-muted/30 px-4 py-3">
+        <span class="text-sm font-medium">预计生育期天数：</span>
+        <span class="text-sm font-bold text-primary">{{ totalGrowthDays }} 天</span>
+        <span class="text-xs text-muted-foreground">（将同一生育时期的农事作业生育期天数汇总）</span>
       </div>
     </div>
 
@@ -525,6 +584,12 @@ const varietyOptions = computed(() => {
   return cropCategoryMap[form.value.cropCategory] || []
 })
 
+// ==================== 农事作业选项数据 ====================
+const growthPeriodOptions = ['播种期', '出苗期', '分蘖期', '拔节期', '抽穗期', '开花期', '灌浆期', '成熟期', '收获期', '苗期', '蕾期', '花铃期', '吐絮期']
+const processOptions = ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业', '育苗管理', '移栽定植', '整枝修剪', '花果管理']
+const taskLinkOptions = ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '育苗', '移栽', '修剪', '疏花疏果', '套袋', '施基肥', '中耕', '培土']
+const workMethodOptions = ['农机作业', '无人机作业', '人工作业', '智能设备作业']
+
 // ==================== 选项卡 ====================
 const tabs = [
   { key: 'basic', label: '基本信息' },
@@ -535,12 +600,20 @@ const activeTab = ref('basic')
 
 // ==================== 表单数据 ====================
 interface FarmingItem {
-  stage: string
-  item: string
-  content: string
-  time: string
-  standard: string
-  remark: string
+  growthPeriod: string       // 生育时期
+  process: string            // 生产流程
+  taskLink: string           // 作业环节
+  farmingDays: number | ''   // 农事作业生育期天数
+  minLeafAge: number | ''    // 最小叶龄（大田种植）
+  maxLeafAge: number | ''    // 最大叶龄（大田种植）
+  coreStandard: string       // 核心农事操作标准
+  envRequirement: string     // 设施环境管控要求（设施种植）
+  paramStandard: string      // 作业参数标准
+  workMethod: string         // 作业方式
+  isSowing: string           // 播种类操作
+  isFertilizing: string      // 施肥类操作
+  isMedicating: string       // 用药类操作
+  remark: string             // 备注
 }
 
 interface MaterialItem {
@@ -597,9 +670,10 @@ const form = ref<SchemeForm>({
   effectiveStatus: 'inactive',
   remark: '',
   farmingItems: isEdit.value ? [] : [
-    { stage: '播种期', item: '整地', content: '深翻30cm，耙平作畦', time: '3月上旬', standard: '耕深均匀，无大坷垃', remark: '避免雨天作业' },
-    { stage: '播种期', item: '播种', content: '机械精量穴播', time: '3月中旬', standard: '行距30cm，穴距15cm', remark: '播后及时覆土镇压' },
-    { stage: '生长期', item: '追肥', content: '分蘖期追施尿素', time: '4月下旬', standard: '亩施10kg', remark: '结合灌水进行' },
+    { growthPeriod: '播种期', process: '土壤准备', taskLink: '整地', farmingDays: 5, minLeafAge: '', maxLeafAge: '', coreStandard: '耕深均匀，无大坷垃', envRequirement: '', paramStandard: '耕深≥30cm', workMethod: '农机作业', isSowing: '否', isFertilizing: '否', isMedicating: '否', remark: '避免雨天作业' },
+    { growthPeriod: '播种期', process: '播种作业', taskLink: '播种', farmingDays: 3, minLeafAge: '', maxLeafAge: '', coreStandard: '行距30cm，穴距15cm', envRequirement: '', paramStandard: '播深3-5cm', workMethod: '农机作业', isSowing: '是', isFertilizing: '否', isMedicating: '否', remark: '播后及时覆土镇压' },
+    { growthPeriod: '生长期', process: '田间管理', taskLink: '追肥', farmingDays: 7, minLeafAge: 3, maxLeafAge: 5, coreStandard: '亩施尿素10kg', envRequirement: '', paramStandard: '施肥深度10cm', workMethod: '人工作业', isSowing: '否', isFertilizing: '是', isMedicating: '否', remark: '结合灌水进行' },
+    { growthPeriod: '生长期', process: '植保防治', taskLink: '病虫害防治', farmingDays: 3, minLeafAge: 5, maxLeafAge: 8, coreStandard: '及时发现及时防治', envRequirement: '', paramStandard: '用药浓度0.1%', workMethod: '无人机作业', isSowing: '否', isFertilizing: '否', isMedicating: '是', remark: '注意安全间隔期' },
   ],
   materialItems: isEdit.value ? [] : [
     { category: '肥料', type: '尿素', spec: '46%含氮量', unit: 'kg', perMu: 10, total: 0, price: 2.5, budget: 0, purpose: '追肥' },
@@ -716,11 +790,25 @@ onBeforeUnmount(() => {
 
 // ==================== 全生育周期总天数 ====================
 const totalGrowthDays = computed(() => {
-  const stages = new Set<string>()
+  // 预计生育期天数：将同一生育时期的农事作业生育期天数汇总（去重生育时期）
+  const periodMap = new Map<string, number>()
   form.value.farmingItems.forEach(item => {
-    if (item.stage.trim()) stages.add(item.stage.trim())
+    const period = item.growthPeriod.trim()
+    const days = Number(item.farmingDays) || 0
+    if (period) {
+      periodMap.set(period, (periodMap.get(period) || 0) + days)
+    }
   })
-  return stages.size > 0 ? `${stages.size} 个生育时期` : '0'
+  if (periodMap.size === 0) return 0
+  return Array.from(periodMap.values()).reduce((a, b) => a + b, 0)
+})
+
+// 农事作业表动态列数（根据种植模式显示/隐藏列）
+const farmingColspan = computed(() => {
+  let cols = 13 // 基础列：序号+生育时期+生产流程+作业环节+农事作业天数+核心标准+参数标准+作业方式+播种+施肥+用药+备注+操作
+  if (form.value.plantingMode === '大田种植') cols += 2 // 最小叶龄+最大叶龄
+  if (form.value.plantingMode === '设施农业种植') cols += 1 // 设施环境管控要求
+  return cols
 })
 
 // ==================== 审批状态显示 ====================
@@ -738,7 +826,12 @@ const approvalStatusClass = computed(() => approvalStatusMap[form.value.approval
 
 // ==================== 农事作业操作 ====================
 function addFarmingRow(): void {
-  form.value.farmingItems.push({ stage: '', item: '', content: '', time: '', standard: '', remark: '' })
+  form.value.farmingItems.push({
+    growthPeriod: '', process: '', taskLink: '', farmingDays: '',
+    minLeafAge: '', maxLeafAge: '', coreStandard: '', envRequirement: '',
+    paramStandard: '', workMethod: '', isSowing: '否', isFertilizing: '否',
+    isMedicating: '否', remark: '',
+  })
 }
 
 function removeFarmingRow(idx: number): void {
