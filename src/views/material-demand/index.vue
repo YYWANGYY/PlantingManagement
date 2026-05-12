@@ -253,6 +253,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { X, ChevronDown as ChevronDownIcon, ChevronRight as ChevronRightIcon, Building2 as Building2Icon } from 'lucide-vue-next'
+import { showToast } from '@/lib/toast'
 
 const router = useRouter()
 
@@ -324,6 +325,8 @@ interface DemandPlan {
   id: string
   year: string
   unit: string
+  subUnit: string
+  approvers: string
   planName: string
   planCode: string
   code: string
@@ -336,18 +339,18 @@ interface DemandPlan {
 }
 
 const demandPlans = ref<DemandPlan[]>([
-  { id: 'dp1', year: '2026', unit: '华康农场', planName: '华康农场2026年水稻种植计划', planCode: 'ZP2026-001', code: 'XQ2026-001', totalDemand: 1250, gap: 380, approvalStatus: '草稿', pushStatus: '未推送', priority: '高', remark: '' },
-  { id: 'dp2', year: '2026', unit: '华康农场', planName: '华康农场2026年小麦种植计划', planCode: 'ZP2026-002', code: 'XQ2026-002', totalDemand: 860, gap: 120, approvalStatus: '审批中', pushStatus: '未推送', priority: '中', remark: '' },
-  { id: 'dp3', year: '2026', unit: '北安农场', planName: '北安农场2026年玉米种植计划', planCode: 'ZP2026-003', code: 'XQ2026-003', totalDemand: 1580, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
-  { id: 'dp4', year: '2026', unit: '嫩江农场', planName: '嫩江农场2026年大豆种植计划', planCode: 'ZP2026-004', code: 'XQ2026-004', totalDemand: 620, gap: 250, approvalStatus: '已退回', pushStatus: '未推送', priority: '高', remark: '退回原因：预算超标' },
-  { id: 'dp5', year: '2026', unit: '盘锦农场', planName: '盘锦农场2026年水稻种植计划', planCode: 'ZP2026-005', code: 'XQ2026-005', totalDemand: 980, gap: 340, approvalStatus: '草稿', pushStatus: '未推送', priority: '中', remark: '' },
-  { id: 'dp6', year: '2025', unit: '华康农场', planName: '华康农场2025年水稻种植计划', planCode: 'ZP2025-001', code: 'XQ2025-001', totalDemand: 1100, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
-  { id: 'dp7', year: '2025', unit: '北安农场', planName: '北安农场2025年玉米种植计划', planCode: 'ZP2025-002', code: 'XQ2025-002', totalDemand: 1400, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
-  { id: 'dp8', year: '2026', unit: '长春农场', planName: '长春农场2026年番茄种植计划', planCode: 'ZP2026-006', code: 'XQ2026-006', totalDemand: 420, gap: 180, approvalStatus: '审批中', pushStatus: '未推送', priority: '高', remark: '' },
-  { id: 'dp9', year: '2026', unit: '华康农场', planName: '华康农场2026年花生种植计划', planCode: 'ZP2026-007', code: 'XQ2026-007', totalDemand: 530, gap: 90, approvalStatus: '已撤回', pushStatus: '未推送', priority: '中', remark: '' },
-  { id: 'dp10', year: '2026', unit: '嫩江农场', planName: '嫩江农场2026年油菜种植计划', planCode: 'ZP2026-008', code: 'XQ2026-008', totalDemand: 380, gap: 0, approvalStatus: '强制结束', pushStatus: '未推送', priority: '低', remark: '计划终止' },
-  { id: 'dp11', year: '2025', unit: '盘锦农场', planName: '盘锦农场2025年水稻种植计划', planCode: 'ZP2025-003', code: 'XQ2025-003', totalDemand: 950, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
-  { id: 'dp12', year: '2026', unit: '华康农场', planName: '华康农场2026年棉花种植计划', planCode: 'ZP2026-009', code: 'XQ2026-009', totalDemand: 720, gap: 310, approvalStatus: '草稿', pushStatus: '未推送', priority: '高', remark: '' },
+  { id: 'dp1', year: '2026', unit: '华康农场', subUnit: '华山分场', approvers: '张建国、李伟', planName: '华康农场2026年水稻种植计划', planCode: 'ZP2026-001', code: 'XQ2026-001', totalDemand: 1250, gap: 380, approvalStatus: '草稿', pushStatus: '未推送', priority: '高', remark: '' },
+  { id: 'dp2', year: '2026', unit: '华康农场', subUnit: '雨林分场', approvers: '王志强、刘洋', planName: '华康农场2026年小麦种植计划', planCode: 'ZP2026-002', code: 'XQ2026-002', totalDemand: 860, gap: 120, approvalStatus: '审批中', pushStatus: '未推送', priority: '中', remark: '' },
+  { id: 'dp3', year: '2026', unit: '北安农场', subUnit: '红星分场', approvers: '赵刚、孙磊', planName: '北安农场2026年玉米种植计划', planCode: 'ZP2026-003', code: 'XQ2026-003', totalDemand: 1580, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
+  { id: 'dp4', year: '2026', unit: '嫩江农场', subUnit: '合发分场', approvers: '陈红、马丽', planName: '嫩江农场2026年大豆种植计划', planCode: 'ZP2026-004', code: 'XQ2026-004', totalDemand: 620, gap: 250, approvalStatus: '已退回', pushStatus: '未推送', priority: '高', remark: '退回原因：预算超标' },
+  { id: 'dp5', year: '2026', unit: '盘锦农场', subUnit: '兴城分场', approvers: '周立、吴芳', planName: '盘锦农场2026年水稻种植计划', planCode: 'ZP2026-005', code: 'XQ2026-005', totalDemand: 980, gap: 340, approvalStatus: '草稿', pushStatus: '未推送', priority: '中', remark: '' },
+  { id: 'dp6', year: '2025', unit: '华康农场', subUnit: '康保分场', approvers: '张建国、李伟', planName: '华康农场2025年水稻种植计划', planCode: 'ZP2025-001', code: 'XQ2025-001', totalDemand: 1100, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
+  { id: 'dp7', year: '2025', unit: '北安农场', subUnit: '兴安分场', approvers: '赵刚、孙磊', planName: '北安农场2025年玉米种植计划', planCode: 'ZP2025-002', code: 'XQ2025-002', totalDemand: 1400, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
+  { id: 'dp8', year: '2026', unit: '长春农场', subUnit: '九台分场', approvers: '韩超、郑伟', planName: '长春农场2026年番茄种植计划', planCode: 'ZP2026-006', code: 'XQ2026-006', totalDemand: 420, gap: 180, approvalStatus: '审批中', pushStatus: '未推送', priority: '高', remark: '' },
+  { id: 'dp9', year: '2026', unit: '华康农场', subUnit: '华山分场', approvers: '张建国、李伟', planName: '华康农场2026年花生种植计划', planCode: 'ZP2026-007', code: 'XQ2026-007', totalDemand: 530, gap: 90, approvalStatus: '已撤回', pushStatus: '未推送', priority: '中', remark: '' },
+  { id: 'dp10', year: '2026', unit: '嫩江农场', subUnit: '白云分场', approvers: '陈红、马丽', planName: '嫩江农场2026年油菜种植计划', planCode: 'ZP2026-008', code: 'XQ2026-008', totalDemand: 380, gap: 0, approvalStatus: '强制结束', pushStatus: '未推送', priority: '低', remark: '计划终止' },
+  { id: 'dp11', year: '2025', unit: '盘锦农场', subUnit: '红海滩分场', approvers: '周立、吴芳', planName: '盘锦农场2025年水稻种植计划', planCode: 'ZP2025-003', code: 'XQ2025-003', totalDemand: 950, gap: 0, approvalStatus: '已完成', pushStatus: '已推送', priority: '低', remark: '' },
+  { id: 'dp12', year: '2026', unit: '华康农场', subUnit: '雨林分场', approvers: '王志强、刘洋', planName: '华康农场2026年棉花种植计划', planCode: 'ZP2026-009', code: 'XQ2026-009', totalDemand: 720, gap: 310, approvalStatus: '草稿', pushStatus: '未推送', priority: '高', remark: '' },
 ])
 
 const filteredList = computed(() => {
@@ -405,6 +408,12 @@ function handleApprove(item: DemandPlan) {
   if (idx >= 0) {
     demandPlans.value[idx].approvalStatus = '审批中'
   }
+  showToast({
+    title: '审批已发起',
+    message: `已发送至：${item.subUnit}负责人进行审批\n审批人：${item.approvers}`,
+    type: 'success',
+    duration: 5000,
+  })
 }
 
 // 推送

@@ -11,8 +11,16 @@
           <p class="mt-1 text-sm text-muted-foreground">{{ currentPlan.code }}</p>
         </div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-3">
         <span :class="statusClass(currentPlan.approvalStatus)">{{ currentPlan.approvalStatus }}</span>
+        <button
+          v-if="canEdit"
+          class="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          @click="handleApprove"
+        >
+          <Send class="h-4 w-4" />
+          发起审批
+        </button>
       </div>
     </div>
 
@@ -268,7 +276,8 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { ArrowLeft, ChevronLeft, ChevronRight, Send } from 'lucide-vue-next'
+import { showToast } from '@/lib/toast'
 
 const route = useRoute()
 const router = useRouter()
@@ -287,6 +296,8 @@ interface PlanDetail {
   planCode: string
   planName: string
   unit: string
+  subUnit: string
+  approvers: string
   approver: string
   approvalStatus: string
   pushStatus: string
@@ -302,13 +313,13 @@ interface PlanDetail {
   actualCost: string
 }
 
-const planMap: Record<string, PlanDetail> = {
-  dp1: { id: 'dp1', code: 'XQ2026-001', planCode: 'ZP2026-001', planName: '华康农场2026年水稻种植计划', unit: '华康农场', approver: '—', approvalStatus: '草稿', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '高', demandTime: '2026-04-15', responsible: '张建国', remark: '', avgPlanPrice: 35.6, planBudget: '44.50', avgActualPrice: '—', actualCost: '—' },
-  dp2: { id: 'dp2', code: 'XQ2026-002', planCode: 'ZP2026-002', planName: '华康农场2026年小麦种植计划', unit: '华康农场', approver: '李明', approvalStatus: '审批中', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '中', demandTime: '2026-03-20', responsible: '王志强', remark: '', avgPlanPrice: 28.3, planBudget: '24.34', avgActualPrice: '—', actualCost: '—' },
-  dp3: { id: 'dp3', code: 'XQ2026-003', planCode: 'ZP2026-003', planName: '北安农场2026年玉米种植计划', unit: '北安农场', approver: '赵刚', approvalStatus: '已完成', pushStatus: '已推送', approvalTime: '2026-01-10', demandStatus: '已关闭', priority: '低', demandTime: '2026-05-01', responsible: '刘大伟', remark: '', avgPlanPrice: 42.1, planBudget: '66.52', avgActualPrice: '41.8', actualCost: '63.24' },
-  dp4: { id: 'dp4', code: 'XQ2026-004', planCode: 'ZP2026-004', planName: '嫩江农场2026年大豆种植计划', unit: '嫩江农场', approver: '—', approvalStatus: '已退回', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '高', demandTime: '2026-04-10', responsible: '陈红', remark: '退回原因：预算超标', avgPlanPrice: 31.5, planBudget: '19.53', avgActualPrice: '—', actualCost: '—' },
-  dp5: { id: 'dp5', code: 'XQ2026-005', planCode: 'ZP2026-005', planName: '盘锦农场2026年水稻种植计划', unit: '盘锦农场', approver: '—', approvalStatus: '草稿', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '中', demandTime: '2026-04-20', responsible: '周立', remark: '', avgPlanPrice: 36.2, planBudget: '35.48', avgActualPrice: '—', actualCost: '—' },
-}
+const planMap: Record<string, PlanDetail> = reactive({
+  dp1: { id: 'dp1', code: 'XQ2026-001', planCode: 'ZP2026-001', planName: '华康农场2026年水稻种植计划', unit: '华康农场', subUnit: '华山分场', approvers: '张建国、李伟', approver: '—', approvalStatus: '草稿', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '高', demandTime: '2026-04-15', responsible: '张建国', remark: '', avgPlanPrice: 35.6, planBudget: '44.50', avgActualPrice: '—', actualCost: '—' },
+  dp2: { id: 'dp2', code: 'XQ2026-002', planCode: 'ZP2026-002', planName: '华康农场2026年小麦种植计划', unit: '华康农场', subUnit: '雨林分场', approvers: '王志强、刘洋', approver: '李明', approvalStatus: '审批中', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '中', demandTime: '2026-03-20', responsible: '王志强', remark: '', avgPlanPrice: 28.3, planBudget: '24.34', avgActualPrice: '—', actualCost: '—' },
+  dp3: { id: 'dp3', code: 'XQ2026-003', planCode: 'ZP2026-003', planName: '北安农场2026年玉米种植计划', unit: '北安农场', subUnit: '红星分场', approvers: '赵刚、孙磊', approver: '赵刚', approvalStatus: '已完成', pushStatus: '已推送', approvalTime: '2026-01-10', demandStatus: '已关闭', priority: '低', demandTime: '2026-05-01', responsible: '刘大伟', remark: '', avgPlanPrice: 42.1, planBudget: '66.52', avgActualPrice: '41.8', actualCost: '63.24' },
+  dp4: { id: 'dp4', code: 'XQ2026-004', planCode: 'ZP2026-004', planName: '嫩江农场2026年大豆种植计划', unit: '嫩江农场', subUnit: '合发分场', approvers: '陈红、马丽', approver: '—', approvalStatus: '已退回', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '高', demandTime: '2026-04-10', responsible: '陈红', remark: '退回原因：预算超标', avgPlanPrice: 31.5, planBudget: '19.53', avgActualPrice: '—', actualCost: '—' },
+  dp5: { id: 'dp5', code: 'XQ2026-005', planCode: 'ZP2026-005', planName: '盘锦农场2026年水稻种植计划', unit: '盘锦农场', subUnit: '兴城分场', approvers: '周立、吴芳', approver: '—', approvalStatus: '草稿', pushStatus: '未推送', approvalTime: '', demandStatus: '待采购', priority: '中', demandTime: '2026-04-20', responsible: '周立', remark: '', avgPlanPrice: 36.2, planBudget: '35.48', avgActualPrice: '—', actualCost: '—' },
+})
 
 const currentPlan = computed(() => planMap[planId] || planMap['dp1'])
 
@@ -519,6 +530,19 @@ function categoryClass(c: string): string {
     '其他': 'bg-gray-100 text-gray-700',
   }
   return map[c] || 'bg-gray-100 text-gray-700'
+}
+
+// 发起审批
+function handleApprove() {
+  const plan = planMap[planId] || planMap['dp1']
+  plan.approvalStatus = '审批中'
+  plan.approver = plan.approvers
+  showToast({
+    title: '审批已发起',
+    message: `已发送至：${plan.subUnit}负责人进行审批\n审批人：${plan.approvers}`,
+    type: 'success',
+    duration: 5000,
+  })
 }
 
 function goBack() {
