@@ -21,10 +21,12 @@
 │   ├── assets/             # 样式资源
 │   │   └── main.css        # 全局样式 + Tailwind
 │   ├── components/         # 公共组件
+│   │   └── Toast.vue       # Toast 通知组件
 │   ├── layouts/            # 布局组件
 │   │   └── DashboardLayout.vue  # 主布局（侧边栏 + 面包屑 + 顶栏）
 │   ├── lib/                # 工具库
-│   │   └── utils.ts        # 通用工具函数 (cn)
+│   │   ├── utils.ts        # 通用工具函数 (cn)
+│   │   └── toast.ts        # Toast 通知工具（纯 DOM 实现）
 │   ├── router/             # 路由配置
 │   │   └── index.ts        # Vue Router 路由表
 │   ├── views/              # 页面组件
@@ -34,17 +36,22 @@
 │   │   │   ├── TreeSelectNode.vue  # 树形选择节点
 │   │   │   └── CompletionBadge.vue # 完成率标签
 │   │   ├── planting-plan/  # 种植方案
+│   │   │   ├── index.vue   # 方案列表
+│   │   │   └── form.vue    # 方案编辑（基本信息+农事作业+农资投入）
 │   │   ├── planting-schedule/ # 种植计划
 │   │   │   ├── index.vue   # 计划清单
 │   │   │   └── monitor.vue # 计划监控
 │   │   ├── material-demand/ # 农资需求
 │   │   │   ├── index.vue   # 需求计划
-│   │   │   └── summary.vue # 需求汇总
+│   │   │   ├── detail.vue  # 需求计划详情
+│   │   │   ├── summary.vue # 需求汇总
+│   │   │   └── summary-detail.vue # 汇总明细
 │   │   ├── statistics/     # 统计分析
 │   │   │   ├── archive.vue # 种植档案
 │   │   │   └── structure.vue # 种植结构表
 │   │   ├── base-management/ # 基础管理
-│   │   │   └── crop.vue    # 作物管理
+│   │   │   ├── crop.vue    # 作物管理
+│   │   │   └── crop-form.vue # 作物编辑
 │   │   └── system/         # 系统管理
 │   │       ├── department.vue # 部门管理
 │   │       ├── personnel.vue  # 人员管理
@@ -65,13 +72,17 @@
 |------|------|----------|
 | `/digital-map` | 数字地图 | 顶级 |
 | `/planting-plan` | 种植方案 | 顶级 |
+| `/planting-plan/form` | 种植方案编辑 | 种植方案 |
 | `/planting-schedule` | 计划清单 | 种植计划 |
 | `/planting-schedule/monitor` | 计划监控 | 种植计划 |
 | `/material-demand` | 需求计划 | 农资需求 |
+| `/material-demand/:id` | 需求计划详情 | 农资需求 |
 | `/material-demand/summary` | 需求汇总 | 农资需求 |
+| `/material-demand/summary/:tab/:key` | 汇总明细 | 农资需求 |
 | `/statistics/archive` | 种植档案 | 统计分析 |
 | `/statistics/structure` | 种植结构表 | 统计分析 |
 | `/base-management/crop` | 作物管理 | 基础管理 |
+| `/base-management/crop/form` | 作物编辑 | 基础管理 |
 | `/system/department` | 部门管理 | 系统管理 |
 | `/system/personnel` | 人员管理 | 系统管理 |
 | `/system/role` | 角色管理 | 系统管理 |

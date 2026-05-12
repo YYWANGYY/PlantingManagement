@@ -3,12 +3,8 @@
     <!-- 页面标题 + 操作 -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <button
-          class="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-muted"
-          @click="goBack"
-        >
-          <ArrowLeft class="mr-1 h-4 w-4" />
-          返回
+         <button class="text-muted-foreground hover:text-foreground" @click="goBack">
+            <ArrowLeft class="h-5 w-5" />
         </button>
         <div>
           <h1 class="text-2xl font-bold tracking-tight">{{ isEdit ? '编辑种植方案' : '新建种植方案' }}</h1>
