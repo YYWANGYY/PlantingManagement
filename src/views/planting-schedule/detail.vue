@@ -275,149 +275,156 @@
           批量下发
         </button>
       </div>
-      <!-- 任务列表（表格） -->
-      <div class="rounded-lg border">
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
-            <thead>
-              <tr class="border-b bg-muted/20">
-                <th class="px-3 py-2 text-left w-10">
-                  <input
-                    type="checkbox"
-                    :checked="isAllSelected"
-                    :indeterminate="isIndeterminate"
-                    class="h-4 w-4 rounded border-gray-300"
-                    @change="toggleSelectAll"
-                  />
-                </th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">序号</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">子任务单编码</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">地块名称</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">地块类型</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划作业面积(亩)</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">生育时期</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">生产流程</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业环节</th>
-                <th v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2 text-left font-medium whitespace-nowrap">最小叶龄</th>
-                <th v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2 text-left font-medium whitespace-nowrap">最大叶龄</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">核心农事操作标准</th>
-                <th v-if="planInfo.plantingMode === '设施种植'" class="px-3 py-2 text-left font-medium whitespace-nowrap">设施环境管控要求</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业参数要求</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业方式</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划开始时间</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划结束时间</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划农资需求</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划作业设备/农机</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业负责人</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业执行人</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">任务状态</th>
-                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(task, tIdx) in paginatedTasks" :key="tIdx" class="border-b hover:bg-muted/10">
-                <td class="px-3 py-2">
-                  <input
-                    v-if="task.taskStatus === 'pending'"
-                    type="checkbox"
-                    :checked="selectedTaskCodes.has(task.taskCode)"
-                    class="h-4 w-4 rounded border-gray-300"
-                    @change="toggleSelect(task.taskCode)"
-                  />
-                </td>
-                <td class="px-3 py-2">{{ (taskCurrentPage - 1) * taskPageSize + tIdx + 1 }}</td>
-                <td class="px-3 py-2 font-mono text-xs">{{ task.taskCode }}</td>
-                <td class="px-3 py-2">{{ task.plotName || '-' }}</td>
-                <td class="px-3 py-2">{{ task.plotType || '-' }}</td>
-                <td class="px-3 py-2">{{ task.planArea }}</td>
-                <td class="px-3 py-2">{{ task.growthStage }}</td>
-                <td class="px-3 py-2">{{ task.productionProcess }}</td>
-                <td class="px-3 py-2">{{ task.workStep }}</td>
-                <td v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2">{{ task.minLeafAge ?? '-' }}</td>
-                <td v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2">{{ task.maxLeafAge ?? '-' }}</td>
-                <td class="px-3 py-2" :title="task.coreStandard">{{ task.coreStandard?.length > 12 ? task.coreStandard.substring(0, 12) + '...' : task.coreStandard }}</td>
-                <td v-if="planInfo.plantingMode === '设施种植'" class="px-3 py-2">{{ task.envRequirement || '-' }}</td>
-                <td class="px-3 py-2">{{ task.workParamReq }}</td>
-                <td class="px-3 py-2">{{ task.workMethod }}</td>
-                <td class="px-3 py-2 whitespace-nowrap">{{ task.planStartTime }}</td>
-                <td class="px-3 py-2 whitespace-nowrap">{{ task.planEndTime }}</td>
-                <td class="px-3 py-2">{{ task.materialDemand || '-' }}</td>
-                <td class="px-3 py-2">{{ task.planEquipment || '-' }}</td>
-                <td class="px-3 py-2">{{ task.workLeader }}</td>
-                <td class="px-3 py-2">{{ task.workExecutor }}</td>
-                <td class="px-3 py-2">
-                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-                    :class="taskStatusBadge(task.taskStatus)">
-                    {{ taskStatusLabel(task.taskStatus) }}
-                  </span>
-                </td>
-                <td class="px-3 py-2">
-                  <button
-                    v-if="task.taskStatus === 'pending'"
-                    class="text-primary hover:text-primary/80 text-xs font-medium"
-                    @click="openDispatchDialog('single', task.taskCode)"
-                  >
-                    下发
-                  </button>
-                  <span v-else class="text-xs text-muted-foreground">-</span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+      <!-- 任务卡片列表 -->
+      <div class="space-y-4">
+        <div v-for="(task, tIdx) in paginatedTasks" :key="tIdx"
+          class="rounded-lg border bg-background shadow-sm overflow-hidden">
+          <!-- 卡片头部：checkbox + 编号 + 状态 + 操作 -->
+          <div class="flex items-center justify-between px-5 py-3 bg-muted/30 border-b">
+            <div class="flex items-center gap-3">
+              <input
+                v-if="task.taskStatus === 'pending'"
+                type="checkbox"
+                :checked="selectedTaskCodes.has(task.taskCode)"
+                class="h-4 w-4 rounded border-gray-300"
+                @change="toggleSelect(task.taskCode)"
+              />
+              <span class="text-sm font-semibold">第 {{ (taskCurrentPage - 1) * taskPageSize + tIdx + 1 }} 项</span>
+              <span class="text-xs text-muted-foreground font-mono">{{ task.taskCode }}</span>
+              <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                :class="taskStatusBadge(task.taskStatus)">
+                {{ taskStatusLabel(task.taskStatus) }}
+              </span>
+            </div>
+            <button
+              v-if="task.taskStatus === 'pending'"
+              class="text-primary hover:text-primary/80 text-xs font-medium"
+              @click="openDispatchDialog('single', task.taskCode)"
+            >
+              下发
+            </button>
+          </div>
+          <!-- 基本信息 -->
+          <div class="px-5 py-4">
+            <h4 class="text-sm font-semibold mb-3 text-foreground/80">基本信息</h4>
+            <div class="grid grid-cols-4 gap-x-6 gap-y-2.5 text-sm">
+              <div><span class="text-muted-foreground">计划编号：</span>{{ task.planCode }}</div>
+              <div><span class="text-muted-foreground">计划名称：</span>{{ task.planName }}</div>
+              <div><span class="text-muted-foreground">所属单位：</span>{{ task.unit }}</div>
+              <div><span class="text-muted-foreground">地块名称：</span>{{ task.plotName || '-' }}</div>
+              <div><span class="text-muted-foreground">地块类型：</span>{{ task.plotType || '-' }}</div>
+              <div><span class="text-muted-foreground">计划作业面积：</span>{{ task.planArea }} 亩</div>
+              <div><span class="text-muted-foreground">生育时期：</span>{{ task.growthStage }}</div>
+              <div><span class="text-muted-foreground">生产流程：</span>{{ task.productionProcess }}</div>
+              <div><span class="text-muted-foreground">作业环节：</span>{{ task.workStep }}</div>
+              <div v-if="planInfo.plantingMode === '大田种植'"><span class="text-muted-foreground">最小叶龄：</span>{{ task.minLeafAge ?? '-' }}</div>
+              <div v-if="planInfo.plantingMode === '大田种植'"><span class="text-muted-foreground">最大叶龄：</span>{{ task.maxLeafAge ?? '-' }}</div>
+              <div><span class="text-muted-foreground">核心农事操作标准：</span>{{ task.coreStandard || '-' }}</div>
+              <div v-if="planInfo.plantingMode === '设施种植'"><span class="text-muted-foreground">设施环境管控要求：</span>{{ task.envRequirement || '-' }}</div>
+              <div><span class="text-muted-foreground">作业参数要求：</span>{{ task.workParamReq || '-' }}</div>
+              <div><span class="text-muted-foreground">作业方式：</span>{{ task.workMethod || '-' }}</div>
+              <div><span class="text-muted-foreground">计划开始时间：</span>{{ task.planStartTime }}</div>
+              <div><span class="text-muted-foreground">计划结束时间：</span>{{ task.planEndTime }}</div>
+              <div><span class="text-muted-foreground">计划作业设备/农机：</span>{{ task.planEquipment || '-' }}</div>
+              <div><span class="text-muted-foreground">作业负责人：</span>{{ task.workLeader }}</div>
+              <div><span class="text-muted-foreground">作业执行人：</span>{{ task.workExecutor }}</div>
+              <div class="col-span-4"><span class="text-muted-foreground">备注：</span>{{ task.remark || '-' }}</div>
+            </div>
+          </div>
+          <!-- 计划农资需求明细 -->
+          <div class="px-5 pb-4">
+            <h4 class="text-sm font-semibold mb-3 text-foreground/80">计划农资需求明细</h4>
+            <div class="rounded-md border overflow-hidden">
+              <table class="w-full text-xs">
+                <thead>
+                  <tr class="border-b bg-muted/20">
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">任务编号</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">农资大类</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">农资品类</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">有效成分/规格</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">标准用量</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计量单位</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">原计划耗用数量</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计划投入预算(元)</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">需求使用时间</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">责任人</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计划单价(元)</th>
+                    <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">备注</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-if="task.materialDetails.length === 0">
+                    <td colspan="12" class="px-2 py-3 text-center text-muted-foreground">暂无农资需求明细</td>
+                  </tr>
+                  <tr v-for="(m, mIdx) in task.materialDetails" :key="mIdx" class="border-b last:border-b-0 hover:bg-muted/10">
+                    <td class="px-2 py-1.5 font-mono">{{ m.taskCode }}</td>
+                    <td class="px-2 py-1.5">{{ m.materialCategory }}</td>
+                    <td class="px-2 py-1.5">{{ m.materialType }}</td>
+                    <td class="px-2 py-1.5">{{ m.specification }}</td>
+                    <td class="px-2 py-1.5">{{ m.standardDosage }}</td>
+                    <td class="px-2 py-1.5">{{ m.unit }}</td>
+                    <td class="px-2 py-1.5">{{ m.plannedQuantity }}</td>
+                    <td class="px-2 py-1.5">{{ m.plannedBudget.toFixed(2) }}</td>
+                    <td class="px-2 py-1.5 whitespace-nowrap">{{ m.demandTime }}</td>
+                    <td class="px-2 py-1.5">{{ m.responsiblePerson }}</td>
+                    <td class="px-2 py-1.5">{{ m.unitPrice.toFixed(2) }}</td>
+                    <td class="px-2 py-1.5">{{ m.remark || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
       <!-- 分页 + 批量操作 -->
-      <div class="flex items-center justify-between px-4 py-3 border-t rounded-b-lg bg-background">
+      <div class="flex items-center justify-between px-4 py-3 border rounded-b-lg bg-background">
         <div class="flex items-center gap-3">
           <span class="text-sm text-muted-foreground">共 {{ taskList.length }} 条</span>
           <span v-if="selectedTaskCodes.size > 0" class="text-sm text-primary font-medium">
             已选 {{ selectedTaskCodes.size }} 条
           </span>
         </div>
-        <div class="flex items-center gap-2">
-
-          <div class="flex items-center gap-1">
+        <div class="flex items-center gap-1">
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="taskCurrentPage === 1"
+            @click="taskCurrentPage = 1"
+          >
+            <ChevronsLeft class="h-4 w-4" />
+          </button>
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="taskCurrentPage === 1"
+            @click="taskCurrentPage--"
+          >
+            <ChevronLeft class="h-4 w-4" />
+          </button>
+          <template v-for="page in taskVisiblePages" :key="page">
+            <span v-if="page === '...'" class="px-1 text-sm text-muted-foreground">...</span>
             <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === 1"
-              @click="taskCurrentPage = 1"
+              v-else
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm"
+              :class="taskCurrentPage === page ? 'bg-primary text-primary-foreground border-primary' : ''"
+              @click="taskCurrentPage = page as number"
             >
-              <ChevronsLeft class="h-4 w-4" />
+              {{ page }}
             </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === 1"
-              @click="taskCurrentPage--"
-            >
-              <ChevronLeft class="h-4 w-4" />
-            </button>
-            <template v-for="page in taskVisiblePages" :key="page">
-              <span v-if="page === '...'" class="px-1 text-sm text-muted-foreground">...</span>
-              <button
-                v-else
-                class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm"
-                :class="taskCurrentPage === page ? 'bg-primary text-primary-foreground border-primary' : ''"
-                @click="taskCurrentPage = page as number"
-              >
-                {{ page }}
-              </button>
-            </template>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === taskTotalPages"
-              @click="taskCurrentPage++"
-            >
-              <ChevronRight class="h-4 w-4" />
-            </button>
-            <button
-              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              :disabled="taskCurrentPage === taskTotalPages"
-              @click="taskCurrentPage = taskTotalPages"
-            >
-              <ChevronsRight class="h-4 w-4" />
-            </button>
-          </div>
+          </template>
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="taskCurrentPage === taskTotalPages"
+            @click="taskCurrentPage++"
+          >
+            <ChevronRight class="h-4 w-4" />
+          </button>
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="taskCurrentPage === taskTotalPages"
+            @click="taskCurrentPage = taskTotalPages"
+          >
+            <ChevronsRight class="h-4 w-4" />
+          </button>
         </div>
       </div>
     </div>
@@ -546,6 +553,21 @@ interface MaterialRow {
   remark: string
 }
 
+interface MaterialDetailItem {
+  taskCode: string
+  materialCategory: string
+  materialType: string
+  specification: string
+  standardDosage: number
+  unit: string
+  plannedQuantity: number
+  plannedBudget: number
+  demandTime: string
+  responsiblePerson: string
+  unitPrice: number
+  remark: string
+}
+
 interface TaskItem {
   taskCode: string
   planCode: string
@@ -565,11 +587,11 @@ interface TaskItem {
   workMethod: string
   planStartTime: string
   planEndTime: string
-  materialDemand: string
   planEquipment: string
   workLeader: string
   workExecutor: string
   taskStatus: TaskStatus
+  materialDetails: MaterialDetailItem[]
   remark: string
 }
 
@@ -886,13 +908,45 @@ function loadMockData(): void {
     workMethod: row.workMethod,
     planStartTime: row.planStartTime,
     planEndTime: row.planEndTime,
-    materialDemand: '',
+    materialDetails: generateMaterialDetails(row, planInfo.value.planCode),
     planEquipment: row.planEquipment,
     workLeader: row.workLeader,
     workExecutor: row.workExecutor,
     taskStatus: 'pending' as TaskStatus,
     remark: '',
   }))
+}
+
+// 根据作业行生成农资需求明细（1对多）
+function generateMaterialDetails(row: FarmingExecRow, planCode: string): MaterialDetailItem[] {
+  const matched = materialList.value.filter(
+    m => m.growthStage === row.growthStage && m.workStep === row.workStep
+  )
+  if (matched.length === 0) {
+    // 若无精确匹配，按生育时期匹配
+    const byStage = materialList.value.filter(m => m.growthStage === row.growthStage)
+    if (byStage.length > 0) return byStage.map(m => mapToDetail(m, planCode))
+    // 兜底：随机1-2条
+    return materialList.value.slice(0, Math.min(2, materialList.value.length)).map(m => mapToDetail(m, planCode))
+  }
+  return matched.map(m => mapToDetail(m, planCode))
+}
+
+function mapToDetail(m: { materialCategory: string; materialType: string; spec: string; standardDosage: string; unit: string; applyMethod: string; remark: string }, planCode: string): MaterialDetailItem {
+  return {
+    taskCode: planCode,
+    materialCategory: m.materialCategory,
+    materialType: m.materialType,
+    specification: m.spec,
+    standardDosage: parseFloat(m.standardDosage) || 0,
+    unit: m.unit,
+    plannedQuantity: (parseFloat(m.standardDosage) || 0) * (1 + Math.random() * 0.2),
+    plannedBudget: Math.round(((parseFloat(m.standardDosage) || 0) * (5 + Math.random() * 20)) * 100) / 100,
+    demandTime: '2025-03-15',
+    responsiblePerson: '张三',
+    unitPrice: Math.round((5 + Math.random() * 20) * 100) / 100,
+    remark: m.remark,
+  }
 }
 
 // ==================== 操作 ====================
