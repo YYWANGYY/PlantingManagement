@@ -52,16 +52,6 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '汇总明细', parent: '农资需求' },
       },
       {
-        path: 'statistics/archive',
-        component: () => import('@/views/statistics/archive.vue'),
-        meta: { title: '种植档案', parent: '统计分析' },
-      },
-      {
-        path: 'statistics/structure',
-        component: () => import('@/views/statistics/structure.vue'),
-        meta: { title: '种植结构表', parent: '统计分析' },
-      },
-      {
         path: 'base-management/crop',
         component: () => import('@/views/base-management/crop.vue'),
         meta: { title: '作物管理', parent: '基础管理' },

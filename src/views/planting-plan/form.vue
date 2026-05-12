@@ -400,13 +400,25 @@
                   <input v-model.number="row.maxLeafAge" type="number" min="0" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="选填" />
                 </td>
                 <td class="h-12 px-2">
-                  <input v-model="row.coreStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="操作标准" />
+                  <select v-if="coreStandardOptions.length > 0" v-model="row.coreStandard" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="s in coreStandardOptions" :key="s" :value="s">{{ s }}</option>
+                  </select>
+                  <input v-else v-model="row.coreStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="操作标准" />
                 </td>
                 <td v-if="form.plantingMode === '设施农业种植'" class="h-12 px-2">
-                  <input v-model="row.envRequirement" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="环境管控要求" />
+                  <select v-if="envRequirementOptions.length > 0" v-model="row.envRequirement" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="e in envRequirementOptions" :key="e" :value="e">{{ e }}</option>
+                  </select>
+                  <input v-else v-model="row.envRequirement" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="环境管控要求" />
                 </td>
                 <td class="h-12 px-2">
-                  <input v-model="row.paramStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="选填" />
+                  <select v-if="paramStandardOptions.length > 0" v-model="row.paramStandard" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="p in paramStandardOptions" :key="p" :value="p">{{ p }}</option>
+                  </select>
+                  <input v-else v-model="row.paramStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="选填" />
                 </td>
                 <td class="h-12 px-2">
                   <select v-model="row.workMethod" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
@@ -584,11 +596,176 @@ const varietyOptions = computed(() => {
   return cropCategoryMap[form.value.cropCategory] || []
 })
 
-// ==================== 农事作业选项数据 ====================
-const growthPeriodOptions = ['播种期', '出苗期', '分蘖期', '拔节期', '抽穗期', '开花期', '灌浆期', '成熟期', '收获期', '苗期', '蕾期', '花铃期', '吐絮期']
-const processOptions = ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业', '育苗管理', '移栽定植', '整枝修剪', '花果管理']
-const taskLinkOptions = ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '育苗', '移栽', '修剪', '疏花疏果', '套袋', '施基肥', '中耕', '培土']
+// ==================== 农事作业选项数据（来源于基础管理-作物管理） ====================
 const workMethodOptions = ['农机作业', '无人机作业', '人工作业', '智能设备作业']
+
+// 作物大类编码映射（与基础管理-作物管理数据源一致）
+const cropCategoryCodeMap: Record<string, string> = {
+  '粮食作物': 'grain', '经济作物': 'cash', '蔬菜': 'vegetable',
+  '水果': 'fruit', '牧草': 'forage', '花卉': 'flower',
+  '园艺作物': 'vegetable', '饲草作物': 'forage',
+}
+
+// 品种编码映射（与基础管理-作物管理品种数据源一致）
+const varietyCodeMap: Record<string, string> = {
+  '水稻-松粳22': 'rice', '小麦-济麦22': 'wheat', '玉米-郑单958': 'corn', '大豆-中黄13': 'soybean',
+  '棉花-鲁棉研28': 'cotton', '油菜-秦油10号': 'rape', '花生-花育33': 'peanut',
+  '茶叶-龙井43': 'tea', '苹果-红富士': 'apple', '番茄-中杂9号': 'tomato',
+  '紫花苜蓿-阿尔冈金': 'alfalfa', '饲用玉米-雅玉8号': 'corn',
+  '黄瓜-津春4号': 'cucumber', '白菜-北京新3号': 'cabbage', '葡萄-巨峰': 'grape', '玫瑰-卡罗拉': 'rose',
+}
+
+// 按作物大类编码定义农事作业数据源（来源于基础管理-作物管理）
+interface CropFarmingData {
+  growthPeriods: string[]       // 生育时期
+  processes: string[]          // 生产流程
+  taskLinks: string[]          // 作业环节
+  coreStandards: string[]      // 核心农事操作标准
+  envRequirements: string[]    // 设施环境管控要求
+  paramStandards: string[]     // 作业参数标准
+}
+
+const cropFarmingDataMap: Record<string, CropFarmingData> = {
+  rice: {
+    growthPeriods: ['播种期', '出苗期', '分蘖期', '拔节期', '抽穗期', '灌浆期', '成熟期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '晒田'],
+    coreStandards: ['耕深均匀，无大坷垃', '行距30cm，穴距15cm', '亩施尿素10kg', '浅水间歇灌溉', '及时发现及时防治', '适时收获，防止落粒'],
+    envRequirements: [],
+    paramStandards: ['耕深≥30cm', '播深3-5cm', '施肥深度10cm', '用药浓度0.1%', '亩用量≥50kg'],
+  },
+  wheat: {
+    growthPeriods: ['播种期', '出苗期', '分蘖期', '越冬期', '返青期', '拔节期', '抽穗期', '灌浆期', '成熟期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '镇压'],
+    coreStandards: ['耕深≥25cm，耙平压实', '基本苗15-20万/亩', '亩施尿素8kg', '适时冬灌', '综合防治蚜虫', '蜡熟末期收获'],
+    envRequirements: [],
+    paramStandards: ['耕深≥25cm', '播深4-5cm', '施肥深度8cm', '用药浓度0.08%', '亩播种量10-15kg'],
+  },
+  corn: {
+    growthPeriods: ['播种期', '出苗期', '拔节期', '大喇叭口期', '抽雄期', '吐丝期', '灌浆期', '成熟期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '培土'],
+    coreStandards: ['深翻≥30cm', '株距25cm，行距60cm', '大喇叭口期追施尿素', '及时排涝', '防治玉米螟', '籽粒乳线消失后收获'],
+    envRequirements: [],
+    paramStandards: ['耕深≥30cm', '播深4-6cm', '施肥深度10cm', '用药浓度0.1%', '亩保苗4000-4500株'],
+  },
+  soybean: {
+    growthPeriods: ['播种期', '出苗期', '分枝期', '开花期', '结荚期', '鼓粒期', '成熟期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕'],
+    coreStandards: ['深松≥25cm', '株距10cm，行距50cm', '初花期追施磷酸二氢钾', '花荚期保持土壤湿润', '防治大豆食心虫', '叶片脱落80%后收获'],
+    envRequirements: [],
+    paramStandards: ['耕深≥25cm', '播深3-5cm', '施肥深度8cm', '用药浓度0.05%', '亩保苗1.5-2万株'],
+  },
+  cotton: {
+    growthPeriods: ['播种期', '出苗期', '苗期', '蕾期', '花铃期', '吐絮期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '培土', '修剪', '化控'],
+    coreStandards: ['覆膜保墒', '一播全苗', '蕾期稳长', '花铃期重施花铃肥', '综合防治棉铃虫', '适时采收'],
+    envRequirements: [],
+    paramStandards: ['耕深≥25cm', '播深2-3cm', '施肥深度10cm', '用药浓度0.1%', '亩留苗1-1.2万株'],
+  },
+  rape: {
+    growthPeriods: ['播种期', '出苗期', '苗期', '越冬期', '蕾薹期', '花期', '角果期', '成熟期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕'],
+    coreStandards: ['精整细耙', '匀播全苗', '冬前促壮苗', '蕾薹期追施硼肥', '防治菌核病', '全株2/3角果变黄时收获'],
+    envRequirements: [],
+    paramStandards: ['耕深≥20cm', '播深1-2cm', '施肥深度8cm', '用药浓度0.08%', '亩播种量0.2-0.3kg'],
+  },
+  peanut: {
+    growthPeriods: ['播种期', '出苗期', '苗期', '花针期', '结荚期', '饱果期', '收获期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕', '培土'],
+    coreStandards: ['深耕细耙', '穴距15cm，行距40cm', '花针期追施钙肥', '保持土壤湿润', '防治地下害虫', '饱果率达70%收获'],
+    envRequirements: [],
+    paramStandards: ['耕深≥25cm', '播深3-5cm', '施肥深度8cm', '用药浓度0.05%', '亩穴数1.5-2万'],
+  },
+  tomato: {
+    growthPeriods: ['育苗期', '定植期', '缓苗期', '开花期', '结果期', '膨大期', '转色期', '采收期'],
+    processes: ['育苗管理', '移栽定植', '田间管理', '植保防治', '水肥管理', '收获作业', '整枝修剪', '花果管理'],
+    taskLinks: ['育苗', '移栽', '追肥', '灌溉', '病虫害防治', '整枝', '疏花疏果', '套袋', '收获', '施基肥'],
+    coreStandards: ['壮苗标准：茎粗0.5cm，5-6片真叶', '定植深度至子叶', '单干整枝', '保花保果', '防治灰霉病', '转色后适时采收'],
+    envRequirements: ['白天温度25-28℃，夜间15-18℃', '相对湿度60-70%', '光照≥8小时/天', 'CO₂浓度800-1200ppm', '通风换气防病害'],
+    paramStandards: ['育苗温度25℃', '定植行距50cm', '追肥浓度0.3%', '用药浓度0.05%', '亩定植3000-3500株'],
+  },
+  cucumber: {
+    growthPeriods: ['育苗期', '定植期', '缓苗期', '抽蔓期', '开花期', '结果期', '盛果期', '采收期'],
+    processes: ['育苗管理', '移栽定植', '田间管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
+    taskLinks: ['育苗', '移栽', '追肥', '灌溉', '病虫害防治', '整枝', '收获', '施基肥', '引蔓'],
+    coreStandards: ['嫁接育苗防枯萎病', '定植后浇透定植水', '及时引蔓整枝', '预防霜霉病', '小水勤浇', '适时采收防老熟'],
+    envRequirements: ['白天温度25-30℃，夜间13-15℃', '相对湿度70-80%', '光照≥6小时/天', '通风降湿防病'],
+    paramStandards: ['育苗温度28℃', '定植行距40cm', '追肥浓度0.2%', '用药浓度0.05%', '亩定植3500-4000株'],
+  },
+  cabbage: {
+    growthPeriods: ['育苗期', '定植期', '莲座期', '结球期', '收获期'],
+    processes: ['育苗管理', '移栽定植', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['育苗', '移栽', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥'],
+    coreStandards: ['适期播种防抽薹', '带土移栽', '莲座期控水蹲苗', '结球期充足供水', '防治菜青虫', '叶球紧实后采收'],
+    envRequirements: [],
+    paramStandards: ['育苗温度20℃', '定植行距50cm', '追肥浓度0.2%', '用药浓度0.05%', '亩定植2500-3000株'],
+  },
+  apple: {
+    growthPeriods: ['休眠期', '萌芽期', '花期', '坐果期', '膨大期', '着色期', '成熟期', '采收期'],
+    processes: ['土壤准备', '花果管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
+    taskLinks: ['修剪', '追肥', '灌溉', '病虫害防治', '疏花疏果', '套袋', '收获', '施基肥', '中耕'],
+    coreStandards: ['冬季修剪整形', '疏花疏果留单果', '套袋护果', '综合防治病虫害', '秋施基肥', '适期分批采收'],
+    envRequirements: [],
+    paramStandards: ['修剪留枝量8-10万/亩', '追肥深度20cm', '套袋时间花后40天', '用药浓度0.08%', '亩产量3000-4000kg'],
+  },
+  grape: {
+    growthPeriods: ['休眠期', '萌芽期', '新梢生长期', '花期', '浆果生长期', '转色期', '成熟期', '采收期'],
+    processes: ['土壤准备', '花果管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
+    taskLinks: ['修剪', '追肥', '灌溉', '病虫害防治', '疏花疏果', '套袋', '收获', '施基肥', '引蔓'],
+    coreStandards: ['冬剪短梢修剪', '疏粒整形', '套袋防鸟害', '防治霜霉病', '膨大期追施钾肥', '可溶性固形物≥16%采收'],
+    envRequirements: [],
+    paramStandards: ['修剪留芽量1.5-2万/亩', '追肥深度15cm', '套袋时间花后30天', '用药浓度0.08%', '亩产量1500-2000kg'],
+  },
+  alfalfa: {
+    growthPeriods: ['播种期', '出苗期', '分枝期', '现蕾期', '开花期', '结荚期', '成熟期'],
+    processes: ['土壤准备', '播种作业', '田间管理', '植保防治', '水肥管理', '收获作业'],
+    taskLinks: ['整地', '播种', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥'],
+    coreStandards: ['深耕细耙', '条播行距30cm', '现蕾期刈割', '留茬高度5cm', '防治蚜虫', '初花期最佳收割'],
+    envRequirements: [],
+    paramStandards: ['耕深≥25cm', '播深1-2cm', '施肥深度8cm', '用药浓度0.05%', '亩播种量1-1.5kg'],
+  },
+  rose: {
+    growthPeriods: ['休眠期', '萌芽期', '抽梢期', '现蕾期', '开花期', '采收期'],
+    processes: ['土壤准备', '花果管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
+    taskLinks: ['修剪', '追肥', '灌溉', '病虫害防治', '疏花疏果', '收获', '施基肥'],
+    coreStandards: ['冬季重剪', '及时摘侧蕾', '防治白粉病', '花期追施磷钾肥', '花蕾露色采收', '保鲜处理'],
+    envRequirements: ['白天温度20-25℃，夜间12-15℃', '相对湿度60-70%', '光照≥6小时/天', '通风防白粉病'],
+    paramStandards: ['修剪留2-3芽/枝', '追肥浓度0.2%', '用药浓度0.05%', '亩定植4000-5000株'],
+  },
+  tea: {
+    growthPeriods: ['休眠期', '萌芽期', '新梢生长期', '采摘期', '二次萌发期', '秋季生长末期'],
+    processes: ['土壤准备', '田间管理', '植保防治', '水肥管理', '收获作业', '整枝修剪'],
+    taskLinks: ['修剪', '追肥', '灌溉', '病虫害防治', '除草', '收获', '施基肥', '中耕'],
+    coreStandards: ['春前轻修剪', '一芽二叶标准采摘', '防治茶小绿叶蝉', '秋施有机肥', '及时分批采摘', '鲜叶4小时内加工'],
+    envRequirements: [],
+    paramStandards: ['修剪留叶层≥10cm', '追肥深度10cm', '用药浓度0.03%', '亩施有机肥2000kg', '亩产鲜叶500-800kg'],
+  },
+}
+
+// 根据作物大类和品种动态获取农事作业选项
+const currentMajorCode = computed(() => {
+  return varietyCodeMap[form.value.cropVariety] || cropCategoryCodeMap[form.value.cropCategory] || ''
+})
+
+const currentFarmingData = computed<CropFarmingData>(() => {
+  return cropFarmingDataMap[currentMajorCode.value] || {
+    growthPeriods: [], processes: [], taskLinks: [],
+    coreStandards: [], envRequirements: [], paramStandards: [],
+  }
+})
+
+const growthPeriodOptions = computed(() => currentFarmingData.value.growthPeriods)
+const processOptions = computed(() => currentFarmingData.value.processes)
+const taskLinkOptions = computed(() => currentFarmingData.value.taskLinks)
+const coreStandardOptions = computed(() => currentFarmingData.value.coreStandards)
+const envRequirementOptions = computed(() => currentFarmingData.value.envRequirements)
+const paramStandardOptions = computed(() => currentFarmingData.value.paramStandards)
 
 // ==================== 选项卡 ====================
 const tabs = [
