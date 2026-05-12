@@ -13,7 +13,7 @@
         <div>
           <h1 class="text-2xl font-bold tracking-tight">{{ isEdit ? '编辑种植方案' : '新建种植方案' }}</h1>
           <p v-if="isEdit" class="mt-0.5 text-sm text-muted-foreground">
-            {{ form.id }} · 版本 v{{ form.version }}
+            {{ form.code }} · 版本 {{ form.version }}
           </p>
         </div>
       </div>
@@ -58,57 +58,67 @@
 
     <!-- Tab 1: 基本信息 -->
     <div v-if="activeTab === 'basic'" class="space-y-6">
+      <!-- 第1行：方案编码 + 方案名称 -->
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <!-- 方案名称 -->
+        <!-- 方案编码 -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium">方案名称 <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            方案编码 <span class="text-red-500">*</span>
+            <span class="ml-2 text-xs text-muted-foreground font-normal">系统生成</span>
+          </label>
           <input
-            v-model="form.name"
+            :value="form.code"
             type="text"
-            placeholder="请输入方案名称"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
           />
         </div>
-        <!-- 所属单位 -->
+        <!-- 方案名称 -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium">所属单位 <span class="text-red-500">*</span></label>
-          <select
-            v-model="form.unit"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">请选择</option>
-            <optgroup v-for="org in orgTree" :key="org.label" :label="org.label">
-              <option v-for="child in org.children" :key="child" :value="child">{{ child }}</option>
-            </optgroup>
-          </select>
+          <label class="mb-1.5 block text-sm font-medium">
+            方案名称 <span class="text-red-500">*</span>
+            <span class="ml-2 text-xs text-muted-foreground font-normal">系统生成</span>
+          </label>
+          <input
+            :value="form.name"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+          />
         </div>
+      </div>
+
+      <!-- 第2行：种植模式 + 种植作物大类 + 种植品种 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <!-- 种植模式 -->
         <div>
           <label class="mb-1.5 block text-sm font-medium">种植模式 <span class="text-red-500">*</span></label>
           <select
             v-model="form.plantingMode"
             class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+            @change="onPlantingModeChange"
           >
             <option value="">请选择</option>
-            <option value="露地种植">露地种植</option>
-            <option value="设施种植">设施种植</option>
+            <option value="大田种植">大田种植</option>
+            <option value="设施农业种植">设施农业种植</option>
           </select>
         </div>
-        <!-- 作物大类 -->
+        <!-- 种植作物大类 -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium">作物大类 <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">种植作物大类 <span class="text-red-500">*</span></label>
           <select
             v-model="form.cropCategory"
             class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-            @change="form.cropVariety = ''"
+            :disabled="!form.plantingMode"
+            @change="onCropCategoryChange"
           >
             <option value="">请选择</option>
             <option v-for="c in cropCategories" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
-        <!-- 作物品种 -->
+        <!-- 种植品种 -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium">作物品种 <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">种植品种 <span class="text-red-500">*</span></label>
           <select
             v-model="form.cropVariety"
             class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
@@ -118,62 +128,209 @@
             <option v-for="v in varietyOptions" :key="v" :value="v">{{ v }}</option>
           </select>
         </div>
-        <!-- 种植季节 -->
-        <div>
-          <label class="mb-1.5 block text-sm font-medium">种植季节 <span class="text-red-500">*</span></label>
-          <select
-            v-model="form.season"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+      </div>
+
+      <!-- 第3行：所属单位（多选树形） -->
+      <div>
+        <label class="mb-1.5 block text-sm font-medium">所属单位 <span class="text-red-500">*</span> <span class="text-xs text-muted-foreground font-normal">（支持多选）</span></label>
+        <div class="relative" ref="unitDropdownRef">
+          <div
+            class="min-h-[36px] flex flex-wrap items-center gap-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm cursor-pointer transition-colors hover:border-primary/50 focus:outline-none focus:ring-1 focus:ring-ring"
+            @click="showUnitDropdown = !showUnitDropdown"
           >
-            <option value="">请选择</option>
-            <option value="春季">春季</option>
-            <option value="夏季">夏季</option>
-            <option value="秋季">秋季</option>
-            <option value="冬季">冬季</option>
-          </select>
+            <span v-if="form.units.length === 0" class="text-muted-foreground">请选择所属单位</span>
+            <template v-else>
+              <span
+                v-for="u in form.units"
+                :key="u"
+                class="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+              >
+                {{ u }}
+                <X class="h-3 w-3 cursor-pointer hover:text-red-500" @click.stop="removeUnit(u)" />
+              </span>
+            </template>
+          </div>
+          <!-- 树形下拉面板 -->
+          <div
+            v-if="showUnitDropdown"
+            class="absolute z-50 mt-1 w-full rounded-md border bg-background shadow-lg"
+          >
+            <div class="p-2">
+              <div v-for="org in orgTree" :key="org.label" class="mb-2">
+                <div class="flex items-center gap-2 mb-1">
+                  <button class="text-sm font-medium text-foreground hover:text-primary" @click="toggleOrgExpand(org.label)">
+                    <ChevronRight :class="['h-3.5 w-3.5 inline-block transition-transform', expandedOrgs.includes(org.label) ? 'rotate-90' : '']" />
+                  </button>
+                  <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      :checked="isOrgAllSelected(org)"
+                      :indeterminate="isOrgPartialSelected(org)"
+                      class="rounded border-input"
+                      @change="toggleOrgAll(org)"
+                    />
+                    {{ org.label }}
+                  </label>
+                </div>
+                <div v-if="expandedOrgs.includes(org.label)" class="ml-7 space-y-1">
+                  <label
+                    v-for="child in org.children"
+                    :key="child"
+                    class="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground"
+                  >
+                    <input
+                      type="checkbox"
+                      :checked="form.units.includes(child)"
+                      class="rounded border-input"
+                      @change="toggleUnit(child)"
+                    />
+                    {{ child }}
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <!-- 种植面积 -->
+      </div>
+
+      <!-- 第4行：适用区域 -->
+      <div>
+        <label class="mb-1.5 block text-sm font-medium">适用区域 <span class="text-red-500">*</span></label>
+        <textarea
+          v-model="form.applicableArea"
+          rows="3"
+          placeholder="请输入适用区域描述"
+          class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+        />
+      </div>
+
+      <!-- 第5行：全生育周期总天数 + 方案版本号 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <!-- 全生育周期总天数 -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium">种植面积(亩) <span class="text-red-500">*</span></label>
+          <label class="mb-1.5 block text-sm font-medium">
+            全生育周期总天数 <span class="text-red-500">*</span>
+            <span class="ml-2 text-xs text-muted-foreground font-normal">自动计算（农事作业生育期去重求和）</span>
+          </label>
           <input
-            v-model.number="form.area"
-            type="number"
-            min="0"
-            placeholder="请输入种植面积"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-        <!-- 产量目标 -->
-        <div>
-          <label class="mb-1.5 block text-sm font-medium">产量目标 <span class="text-red-500">*</span></label>
-          <input
-            v-model="form.yieldTarget"
+            :value="totalGrowthDays"
             type="text"
-            placeholder="如 650kg/亩"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
           />
+          <p class="mt-1 text-xs text-muted-foreground">= 农事作业标准明细表中所有生育时期天数去重求和</p>
         </div>
-        <!-- 年份 -->
+        <!-- 方案版本号 -->
         <div>
-          <label class="mb-1.5 block text-sm font-medium">年份 <span class="text-red-500">*</span></label>
-          <select
-            v-model="form.year"
-            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="">请选择</option>
-            <option v-for="y in [2026, 2025, 2024]" :key="y" :value="y">{{ y }}</option>
-          </select>
+          <label class="mb-1.5 block text-sm font-medium">
+            方案版本号 <span class="text-red-500">*</span>
+          </label>
+          <input
+            :value="form.version"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+          />
+          <p class="mt-1 text-xs text-muted-foreground">初始 v1.0，修改完成审批后自动迭代</p>
         </div>
-        <!-- 方案描述 -->
-        <div class="lg:col-span-2">
-          <label class="mb-1.5 block text-sm font-medium">方案描述</label>
-          <textarea
-            v-model="form.description"
-            rows="3"
-            placeholder="请输入方案描述"
-            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+      </div>
+
+      <!-- 第6行：编制人 + 编制时间 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">编制人 <span class="text-red-500">*</span> <span class="text-xs text-muted-foreground font-normal">自动代入</span></label>
+          <input
+            :value="form.author"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
           />
         </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">编制时间 <span class="text-red-500">*</span> <span class="text-xs text-muted-foreground font-normal">自动代入</span></label>
+          <input
+            :value="form.compiledAt"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+          />
+        </div>
+      </div>
+
+      <!-- 第7行：审批人 + 审批完成时间 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">审批人 <span class="text-xs text-muted-foreground font-normal">审批完成时自动回填</span></label>
+          <input
+            :value="form.approver"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+            placeholder="审批完成后自动填充"
+          />
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">审批完成时间 <span class="text-xs text-muted-foreground font-normal">审批完成时自动回填</span></label>
+          <input
+            :value="form.approvedAt"
+            type="text"
+            readonly
+            class="h-9 w-full rounded-md border border-input bg-muted px-3 py-1 text-sm text-muted-foreground cursor-not-allowed"
+            placeholder="审批完成后自动填充"
+          />
+        </div>
+      </div>
+
+      <!-- 第8行：审批状态 + 生效状态 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">审批状态</label>
+          <div class="flex items-center h-9">
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="approvalStatusClass"
+            >
+              {{ approvalStatusText }}
+            </span>
+          </div>
+        </div>
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">
+            生效状态
+            <span class="text-xs text-muted-foreground font-normal">自动计算（审批完成 且 生效时间已到达）</span>
+          </label>
+          <div class="flex items-center h-9">
+            <span
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="form.effectiveStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'"
+            >
+              {{ form.effectiveStatus === 'active' ? '已生效' : '未生效' }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 第9行：生效时间 -->
+      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <label class="mb-1.5 block text-sm font-medium">生效时间 <span class="text-red-500">*</span></label>
+          <input
+            v-model="form.effectiveTime"
+            type="date"
+            class="h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+      </div>
+
+      <!-- 第10行：备注 -->
+      <div>
+        <label class="mb-1.5 block text-sm font-medium">备注</label>
+        <textarea
+          v-model="form.remark"
+          rows="3"
+          placeholder="请输入备注信息"
+          class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+        />
       </div>
     </div>
 
@@ -195,7 +352,7 @@
             <thead>
               <tr class="border-b bg-muted/50">
                 <th class="h-10 px-3 text-left font-medium text-muted-foreground" style="width:50px">序号</th>
-                <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业阶段</th>
+                <th class="h-10 px-3 text-left font-medium text-muted-foreground">生育时期</th>
                 <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业项目</th>
                 <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业内容</th>
                 <th class="h-10 px-3 text-left font-medium text-muted-foreground">作业时间</th>
@@ -333,9 +490,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Save, Send, Plus, Trash2 } from 'lucide-vue-next'
+import { ArrowLeft, Save, Send, Plus, Trash2, X, ChevronRight } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
 
 // ==================== 路由 ====================
@@ -359,7 +516,10 @@ const cropCategoryMap: Record<string, string[]> = {
   '园艺作物': ['茶叶-龙井43', '苹果-红富士', '番茄-中杂9号'],
   '饲草作物': ['紫花苜蓿-阿尔冈金', '饲用玉米-雅玉8号'],
 }
-const cropCategories = Object.keys(cropCategoryMap)
+const cropCategories = computed(() => {
+  if (!form.value.plantingMode) return Object.keys(cropCategoryMap)
+  return Object.keys(cropCategoryMap)
+})
 const varietyOptions = computed(() => {
   if (!form.value.cropCategory) return []
   return cropCategoryMap[form.value.cropCategory] || []
@@ -395,38 +555,47 @@ interface MaterialItem {
   purpose: string
 }
 
+type ApprovalStatus = 'draft' | 'review' | 'rejected' | 'revoked' | 'forced_end' | 'completed'
+type EffectiveStatus = 'inactive' | 'active'
+
 interface SchemeForm {
-  id: string
+  code: string
   name: string
-  unit: string
   plantingMode: string
   cropCategory: string
   cropVariety: string
-  season: string
-  area: number | ''
-  yieldTarget: string
-  year: number | ''
-  description: string
-  version: number
-  status: string
+  units: string[]
+  applicableArea: string
+  version: string
+  author: string
+  compiledAt: string
+  approver: string
+  approvedAt: string
+  approvalStatus: ApprovalStatus
+  effectiveTime: string
+  effectiveStatus: EffectiveStatus
+  remark: string
   farmingItems: FarmingItem[]
   materialItems: MaterialItem[]
 }
 
 const form = ref<SchemeForm>({
-  id: isEdit.value ? editId.value : '',
+  code: '',
   name: '',
-  unit: '',
   plantingMode: '',
   cropCategory: '',
   cropVariety: '',
-  season: '',
-  area: '',
-  yieldTarget: '',
-  year: '',
-  description: '',
-  version: isEdit.value ? editVersion.value : 1,
-  status: 'draft',
+  units: [],
+  applicableArea: '',
+  version: isEdit.value ? `v${editVersion.value}.0` : 'v1.0',
+  author: '当前用户',
+  compiledAt: new Date().toLocaleDateString('zh-CN'),
+  approver: '',
+  approvedAt: '',
+  approvalStatus: 'draft',
+  effectiveTime: '',
+  effectiveStatus: 'inactive',
+  remark: '',
   farmingItems: isEdit.value ? [] : [
     { stage: '播种期', item: '整地', content: '深翻30cm，耙平作畦', time: '3月上旬', standard: '耕深均匀，无大坷垃', remark: '避免雨天作业' },
     { stage: '播种期', item: '播种', content: '机械精量穴播', time: '3月中旬', standard: '行距30cm，穴距15cm', remark: '播后及时覆土镇压' },
@@ -440,33 +609,156 @@ const form = ref<SchemeForm>({
   ],
 })
 
-// 初始化计算
-form.value.materialItems.forEach((_, idx) => calcMaterialTotal(idx))
+// ==================== 方案编码生成 ====================
+function generateCode(): string {
+  const prefix = 'FA'
+  const year = new Date().getFullYear()
+  const seq = String(Math.floor(Math.random() * 9000) + 1000)
+  return `${prefix}${year}${seq}`
+}
+
+onMounted(() => {
+  if (!isEdit.value) {
+    form.value.code = generateCode()
+  } else {
+    form.value.code = editId.value
+  }
+  form.value.materialItems.forEach((_, idx) => calcMaterialTotal(idx))
+})
+
+// ==================== 方案名称自动生成 ====================
+const generatedName = computed(() => {
+  const mode = form.value.plantingMode
+  const category = form.value.cropCategory
+  const variety = form.value.cropVariety
+  const area = form.value.applicableArea
+  if (!mode && !category && !variety && !area) return ''
+  const parts: string[] = []
+  if (mode) parts.push(mode)
+  if (category) parts.push(category)
+  if (variety) parts.push(variety)
+  if (area) parts.push(area)
+  return parts.join('') + '种植方案'
+})
+
+// 当依赖字段变化时自动更新方案名称
+function updateName(): void {
+  if (generatedName.value) {
+    form.value.name = generatedName.value
+  }
+}
+
+function onPlantingModeChange(): void {
+  form.value.cropCategory = ''
+  form.value.cropVariety = ''
+  updateName()
+}
+
+function onCropCategoryChange(): void {
+  form.value.cropVariety = ''
+  updateName()
+}
+
+// ==================== 所属单位多选 ====================
+const showUnitDropdown = ref(false)
+const expandedOrgs = ref<string[]>([])
+const unitDropdownRef = ref<HTMLElement | null>(null)
+
+function toggleOrgExpand(label: string): void {
+  const idx = expandedOrgs.value.indexOf(label)
+  if (idx >= 0) expandedOrgs.value.splice(idx, 1)
+  else expandedOrgs.value.push(label)
+}
+
+function isOrgAllSelected(org: { label: string; children: string[] }): boolean {
+  return org.children.every((c: string) => form.value.units.includes(c))
+}
+
+function isOrgPartialSelected(org: { label: string; children: string[] }): boolean {
+  const selected = org.children.filter((c: string) => form.value.units.includes(c))
+  return selected.length > 0 && selected.length < org.children.length
+}
+
+function toggleOrgAll(org: { label: string; children: string[] }): void {
+  if (isOrgAllSelected(org)) {
+    form.value.units = form.value.units.filter((u: string) => !org.children.includes(u))
+  } else {
+    const toAdd = org.children.filter((c: string) => !form.value.units.includes(c))
+    form.value.units.push(...toAdd)
+  }
+}
+
+function toggleUnit(unit: string): void {
+  const idx = form.value.units.indexOf(unit)
+  if (idx >= 0) form.value.units.splice(idx, 1)
+  else form.value.units.push(unit)
+}
+
+function removeUnit(unit: string): void {
+  const idx = form.value.units.indexOf(unit)
+  if (idx >= 0) form.value.units.splice(idx, 1)
+}
+
+// 点击外部关闭下拉
+function handleClickOutsideUnit(e: MouseEvent): void {
+  if (unitDropdownRef.value && !unitDropdownRef.value.contains(e.target as Node)) {
+    showUnitDropdown.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutsideUnit)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutsideUnit)
+})
+
+// ==================== 全生育周期总天数 ====================
+const totalGrowthDays = computed(() => {
+  const stages = new Set<string>()
+  form.value.farmingItems.forEach(item => {
+    if (item.stage.trim()) stages.add(item.stage.trim())
+  })
+  return stages.size > 0 ? `${stages.size} 个生育时期` : '0'
+})
+
+// ==================== 审批状态显示 ====================
+const approvalStatusMap: Record<ApprovalStatus, { text: string; class: string }> = {
+  draft: { text: '草稿', class: 'bg-gray-100 text-gray-600' },
+  review: { text: '审批中', class: 'bg-blue-100 text-blue-700' },
+  rejected: { text: '已退回', class: 'bg-red-100 text-red-700' },
+  revoked: { text: '已撤回', class: 'bg-orange-100 text-orange-700' },
+  forced_end: { text: '强制结束', class: 'bg-purple-100 text-purple-700' },
+  completed: { text: '已完成', class: 'bg-green-100 text-green-700' },
+}
+
+const approvalStatusText = computed(() => approvalStatusMap[form.value.approvalStatus].text)
+const approvalStatusClass = computed(() => approvalStatusMap[form.value.approvalStatus].class)
 
 // ==================== 农事作业操作 ====================
-function addFarmingRow() {
+function addFarmingRow(): void {
   form.value.farmingItems.push({ stage: '', item: '', content: '', time: '', standard: '', remark: '' })
 }
 
-function removeFarmingRow(idx: number) {
+function removeFarmingRow(idx: number): void {
   form.value.farmingItems.splice(idx, 1)
 }
 
 // ==================== 农资投入操作 ====================
-function addMaterialRow() {
+function addMaterialRow(): void {
   form.value.materialItems.push({ category: '', type: '', spec: '', unit: '', perMu: '', total: 0, price: '', budget: 0, purpose: '' })
 }
 
-function removeMaterialRow(idx: number) {
+function removeMaterialRow(idx: number): void {
   form.value.materialItems.splice(idx, 1)
 }
 
-function calcMaterialTotal(idx: number) {
+function calcMaterialTotal(idx: number): void {
   const row = form.value.materialItems[idx]
-  const area = Number(form.value.area) || 0
   const perMu = Number(row.perMu) || 0
   const price = Number(row.price) || 0
-  row.total = Math.round(perMu * area * 100) / 100
+  row.total = Math.round(perMu * 100) / 100
   row.budget = Math.round(row.total * price * 100) / 100
 }
 
@@ -476,47 +768,45 @@ const materialBudgetTotal = computed(() => {
 
 // ==================== 表单验证 ====================
 const canSave = computed(() => {
-  return form.value.name.trim() !== ''
+  return form.value.plantingMode.trim() !== '' ||
+    form.value.cropCategory.trim() !== '' ||
+    form.value.applicableArea.trim() !== ''
 })
 
 const canSubmit = computed(() => {
   const f = form.value
   return (
-    f.name.trim() !== '' &&
-    f.unit !== '' &&
     f.plantingMode !== '' &&
     f.cropCategory !== '' &&
     f.cropVariety !== '' &&
-    f.season !== '' &&
-    Number(f.area) > 0 &&
-    f.yieldTarget.trim() !== '' &&
-    Number(f.year) > 0 &&
+    f.units.length > 0 &&
+    f.applicableArea.trim() !== '' &&
+    f.effectiveTime !== '' &&
     f.farmingItems.length > 0 &&
     f.materialItems.length > 0
   )
 })
 
 // ==================== 保存与发起 ====================
-function handleSave() {
+function handleSave(): void {
   if (!canSave.value) return
-  // 重新计算所有农资合计
   form.value.materialItems.forEach((_, idx) => calcMaterialTotal(idx))
-  form.value.status = 'draft'
-  showToast({ message: `方案已保存${isEdit.value ? '（版本 v' + form.value.version + '）' : ''}`, type: 'success' })
+  form.value.approvalStatus = 'draft'
+  showToast({ message: `方案已保存${isEdit.value ? '（版本 ' + form.value.version + '）' : ''}`, type: 'success' })
 }
 
-function handleSubmit() {
+function handleSubmit(): void {
   if (!canSubmit.value) {
     showToast({ message: '请填写完整的方案信息后再发起流程', type: 'warning' })
     return
   }
   form.value.materialItems.forEach((_, idx) => calcMaterialTotal(idx))
-  form.value.status = 'review'
+  form.value.approvalStatus = 'review'
 
   // 找出所属单位对应的区域公司审批人
   let approverUnit = ''
   for (const org of orgTree) {
-    if (org.children.includes(form.value.unit)) {
+    if (org.children.some(c => form.value.units.includes(c))) {
       approverUnit = org.label
       break
     }
@@ -524,7 +814,7 @@ function handleSubmit() {
   showToast({ message: `已发送至：${approverUnit}负责人进行审批（审批人：张三、李四）`, type: 'success' })
 }
 
-function goBack() {
+function goBack(): void {
   router.push('/planting-plan')
 }
 </script>
