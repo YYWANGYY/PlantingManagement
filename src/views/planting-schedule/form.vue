@@ -329,7 +329,14 @@
     <!-- Tab 2: 种植作业执行计划明细表 -->
     <div v-if="activeTab === 'farming'" class="space-y-4">
       <div class="flex items-center justify-between">
-        <p class="text-sm text-muted-foreground">基于种植方案的农事作业标准，制定执行计划的时间安排</p>
+        <div class="text-sm text-muted-foreground space-y-1">
+          <p>基于种植方案的农事作业标准，制定执行计划的时间安排</p>
+          <div class="flex items-center gap-4 text-xs">
+            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-gray-400"></span> 引用方案代入-不可修改</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-blue-400"></span> 引用方案代入-可修改</span>
+            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-green-400"></span> 特有字段</span>
+          </div>
+        </div>
         <button
           class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
           @click="addFarmingRow"
@@ -340,53 +347,105 @@
       </div>
       <div class="rounded-lg border">
         <div class="overflow-x-auto">
-          <table class="w-full text-sm" style="min-width:1800px">
+          <table class="w-full text-sm" style="min-width:2400px">
             <thead>
               <tr class="border-b bg-muted/50">
                 <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:40px">序号</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:90px">生育时期</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:90px">生产流程</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:100px">作业环节</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:90px">农事作业<br/>生育期天数</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:130px">核心农事<br/>操作标准</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">作业参数标准</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:90px">作业方式</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">计划开始时间<span class="text-red-500">*</span></th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">计划结束时间<span class="text-red-500">*</span></th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">实际开始时间</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:110px">实际结束时间</th>
-                <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:70px">执行状态</th>
-                <th class="h-10 px-2 text-left font-medium text-muted-foreground" style="width:100px">备注</th>
+                <!-- 引用方案代入-不可修改 -->
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:80px">生育时期</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:80px">生产流程</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:90px">作业环节</th>
+                <th v-if="form.plantingMode !== '设施种植'" class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:70px">最小叶龄</th>
+                <th v-if="form.plantingMode !== '设施种植'" class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:70px">最大叶龄</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:120px">核心农事<br/>操作标准</th>
+                <th v-if="form.plantingMode === '设施种植'" class="h-10 px-2 text-left font-medium text-muted-foreground bg-gray-50/50" style="width:120px">设施环境<br/>管控要求</th>
+                <!-- 引用方案代入-可修改 -->
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-blue-50/50" style="width:110px">计划开始时间<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-blue-50/50" style="width:110px">计划结束时间<span class="text-red-500">*</span></th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-blue-50/50" style="width:110px">作业参数要求</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-blue-50/50" style="width:90px">作业方式</th>
+                <!-- 特有字段 -->
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:90px">计划作业<br/>面积(亩)</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:120px">计划作业<br/>设备/农机</th>
+                <th class="h-10 px-2 text-center font-medium text-muted-foreground bg-green-50/50" style="width:70px">执行状态</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:90px">作业负责人</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:90px">作业执行人</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:110px">实际完成时间</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:130px">执行记录编号</th>
+                <th class="h-10 px-2 text-left font-medium text-muted-foreground bg-green-50/50" style="width:100px">备注</th>
                 <th class="h-10 px-2 text-center font-medium text-muted-foreground" style="width:50px">操作</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="(row, idx) in form.farmingItems" :key="idx" class="border-b hover:bg-muted/30">
                 <td class="h-12 px-2 text-center text-muted-foreground">{{ idx + 1 }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.growthPeriod }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.productionProcess }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.taskLink }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.farmingDays }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.coreStandard }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.paramStandard }}</td>
-                <td class="h-12 px-2 text-sm">{{ row.workMethod }}</td>
-                <td class="h-12 px-2">
+                <!-- 引用方案代入-不可修改 -->
+                <td class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.growthPeriod || '-' }}</span></td>
+                <td class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.productionProcess || '-' }}</span></td>
+                <td class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.taskLink || '-' }}</span></td>
+                <td v-if="form.plantingMode !== '设施种植'" class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.minLeafAge || '-' }}</span></td>
+                <td v-if="form.plantingMode !== '设施种植'" class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.maxLeafAge || '-' }}</span></td>
+                <td class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.coreStandard || '-' }}</span></td>
+                <td v-if="form.plantingMode === '设施种植'" class="h-12 px-2 bg-gray-50/30"><span class="text-sm">{{ row.envControlReq || '-' }}</span></td>
+                <!-- 引用方案代入-可修改 -->
+                <td class="h-12 px-2 bg-blue-50/30">
                   <input v-model="row.planStartDate" type="date" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring" />
                 </td>
-                <td class="h-12 px-2">
+                <td class="h-12 px-2 bg-blue-50/30">
                   <input v-model="row.planEndDate" type="date" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring" />
                 </td>
-                <td class="h-12 px-2">
-                  <input v-model="row.actualStartDate" type="date" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring" />
+                <td class="h-12 px-2 bg-blue-50/30">
+                  <input v-model="row.paramStandard" class="h-8 w-full rounded border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring" placeholder="参数要求" />
                 </td>
-                <td class="h-12 px-2">
-                  <input v-model="row.actualEndDate" type="date" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring" />
+                <td class="h-12 px-2 bg-blue-50/30">
+                  <select v-model="row.workMethod" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option value="农机作业">农机作业</option>
+                    <option value="人工作业">人工作业</option>
+                    <option value="无人机作业">无人机作业</option>
+                    <option value="智能设备作业">智能设备作业</option>
+                  </select>
                 </td>
-                <td class="h-12 px-2 text-center">
+                <!-- 特有字段 -->
+                <td class="h-12 px-2 bg-green-50/30">
+                  <input v-model.number="row.planWorkArea" type="number" min="0" class="h-8 w-full rounded border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring" placeholder="面积" />
+                </td>
+                <td class="h-12 px-2 bg-green-50/30">
+                  <select v-model="row.planEquipment" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-if="form.plantingMode === '大田种植'" value="拖拉机">拖拉机</option>
+                    <option v-if="form.plantingMode === '大田种植'" value="收割机">收割机</option>
+                    <option v-if="form.plantingMode === '大田种植'" value="播种机">播种机</option>
+                    <option v-if="form.plantingMode === '大田种植'" value="旋耕机">旋耕机</option>
+                    <option v-if="form.plantingMode === '设施种植'" value="温控设备">温控设备</option>
+                    <option v-if="form.plantingMode === '设施种植'" value="灌溉设备">灌溉设备</option>
+                    <option v-if="form.plantingMode === '设施种植'" value="补光设备">补光设备</option>
+                    <option v-if="form.plantingMode === '设施种植'" value="通风设备">通风设备</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2 text-center bg-green-50/30">
                   <span :class="execStatusBadge(row.execStatus)">{{ execStatusLabel(row.execStatus) }}</span>
                 </td>
-                <td class="h-12 px-2">
-                  <input v-model="row.remark" class="h-8 w-full rounded border border-input bg-transparent px-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring" placeholder="备注" />
+                <td class="h-12 px-2 bg-green-50/30">
+                  <select v-model="row.workLeader" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="p in personnelList" :key="p.id" :value="p.name">{{ p.name }}</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2 bg-green-50/30">
+                  <select v-model="row.workExecutor" class="h-8 w-full rounded border border-input bg-transparent px-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring">
+                    <option value="">请选择</option>
+                    <option v-for="p in personnelList" :key="p.id" :value="p.name">{{ p.name }}</option>
+                  </select>
+                </td>
+                <td class="h-12 px-2 bg-green-50/30">
+                  <span class="text-xs text-muted-foreground">{{ row.actualCompleteTime || '-' }}</span>
+                </td>
+                <td class="h-12 px-2 bg-green-50/30">
+                  <span class="text-xs font-mono text-muted-foreground">{{ row.execRecordCode || '-' }}</span>
+                </td>
+                <td class="h-12 px-2 bg-green-50/30">
+                  <input v-model="row.remark" class="h-8 w-full rounded border border-input bg-transparent px-2 text-xs focus:outline-none focus:ring-1 focus:ring-ring" placeholder="备注" />
                 </td>
                 <td class="h-12 px-2 text-center">
                   <button class="text-red-500 hover:text-red-700" @click="removeFarmingRow(idx)">
@@ -395,7 +454,7 @@
                 </td>
               </tr>
               <tr v-if="form.farmingItems.length === 0">
-                <td colspan="15" class="p-6 text-center text-muted-foreground">暂无明细，点击"添加明细"新增</td>
+                <td colspan="21" class="p-6 text-center text-muted-foreground">暂无明细，点击"添加明细"新增</td>
               </tr>
             </tbody>
           </table>
@@ -775,22 +834,31 @@ const tabs = [
 const activeTab = ref('basic')
 
 // ==================== 执行状态 ====================
-type ExecStatus = 'pending' | 'in_progress' | 'completed' | 'delayed'
+type ScheduleExecStatus = 'pending_issue' | 'pending_exec' | 'in_progress' | 'completed' | 'overdue' | 'cancelled'
 
-function execStatusLabel(status: ExecStatus): string {
-  const map: Record<ExecStatus, string> = { pending: '待执行', in_progress: '执行中', completed: '已完成', delayed: '已延期' }
-  return map[status] || '待执行'
+function execStatusLabel(status: ScheduleExecStatus): string {
+  const map: Record<ScheduleExecStatus, string> = {
+    pending_issue: '待下发',
+    pending_exec: '待执行',
+    in_progress: '执行中',
+    completed: '已完成',
+    overdue: '已逾期',
+    cancelled: '已取消',
+  }
+  return map[status] || '待下发'
 }
 
-function execStatusBadge(status: ExecStatus): string {
-  const base = 'inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium'
-  const map: Record<ExecStatus, string> = {
-    pending: 'bg-gray-100 text-gray-600',
-    in_progress: 'bg-blue-100 text-blue-700',
+function execStatusBadge(status: ScheduleExecStatus): string {
+  const base = 'inline-flex items-center rounded-md px-1.5 py-0.5 text-xs font-medium whitespace-nowrap'
+  const map: Record<ScheduleExecStatus, string> = {
+    pending_issue: 'bg-gray-100 text-gray-600',
+    pending_exec: 'bg-blue-100 text-blue-700',
+    in_progress: 'bg-yellow-100 text-yellow-700',
     completed: 'bg-green-100 text-green-700',
-    delayed: 'bg-red-100 text-red-700',
+    overdue: 'bg-red-100 text-red-700',
+    cancelled: 'bg-gray-200 text-gray-500',
   }
-  return `${base} ${map[status] || map.pending}`
+  return `${base} ${map[status] || map.pending_issue}`
 }
 
 // ==================== 地块数据（种植单元） ====================
@@ -1084,18 +1152,27 @@ const personnelList = computed(() => {
 
 // ==================== 农事作业执行计划明细 ====================
 interface FarmingExecItem {
+  // 引用方案代入-不可修改
   growthPeriod: string
   productionProcess: string
   taskLink: string
-  farmingDays: number | ''
+  minLeafAge: number | ''
+  maxLeafAge: number | ''
   coreStandard: string
-  paramStandard: string
-  workMethod: string
+  envControlReq: string
+  // 引用方案代入-可修改
   planStartDate: string
   planEndDate: string
-  actualStartDate: string
-  actualEndDate: string
-  execStatus: ExecStatus
+  paramStandard: string
+  workMethod: string
+  // 特有字段
+  planWorkArea: number | ''
+  planEquipment: string
+  execStatus: ScheduleExecStatus
+  workLeader: string
+  workExecutor: string
+  actualCompleteTime: string
+  execRecordCode: string
   remark: string
 }
 
@@ -1167,6 +1244,66 @@ watch(() => form.value.planStartDate, (newVal) => {
     startDate.setDate(startDate.getDate() + schemeInfo.value.totalDays)
     form.value.planEndDate = startDate.toISOString().slice(0, 10)
   }
+  // 自动计算农事作业计划时间（顺序排列）
+  autoCalcFarmingTimes()
+})
+
+// 自动计算农事作业执行计划的时间（按顺序排列）
+function autoCalcFarmingTimes(): void {
+  const startDate = form.value.planStartDate
+  if (!startDate || form.value.farmingItems.length === 0) return
+
+  let currentDate = new Date(startDate)
+  // 按生育期天数顺序推进
+  const farmingDaysMap: Record<string, number> = {
+    '整地': 5, '播种': 3, '追肥': 7, '灌溉': 10,
+    '病虫害防治': 3, '收获': 5, '施基肥': 4, '间苗': 3,
+  }
+
+  for (const item of form.value.farmingItems) {
+    if (!item.planStartDate) {
+      item.planStartDate = currentDate.toISOString().slice(0, 10)
+    }
+    const days = farmingDaysMap[item.taskLink] || 5
+    const endDate = new Date(item.planStartDate)
+    endDate.setDate(endDate.getDate() + days)
+    if (!item.planEndDate) {
+      item.planEndDate = endDate.toISOString().slice(0, 10)
+    }
+    // 下一行的开始时间 = 上一行的结束时间
+    currentDate = new Date(item.planEndDate)
+  }
+}
+
+// 自动代入特有字段
+watch(() => form.value.totalArea, (newVal) => {
+  if (newVal) {
+    for (const item of form.value.farmingItems) {
+      if (!item.planWorkArea) {
+        item.planWorkArea = typeof newVal === 'number' ? newVal : 0
+      }
+    }
+  }
+})
+
+watch(() => form.value.planLeader, (newVal) => {
+  if (newVal) {
+    for (const item of form.value.farmingItems) {
+      if (!item.workLeader) {
+        item.workLeader = newVal
+      }
+    }
+  }
+})
+
+watch(() => form.value.execLeader, (newVal) => {
+  if (newVal) {
+    for (const item of form.value.farmingItems) {
+      if (!item.workExecutor) {
+        item.workExecutor = newVal
+      }
+    }
+  }
 })
 
 // ==================== 方案代入数据 ====================
@@ -1182,26 +1319,37 @@ function loadSchemeData(): void {
   form.value.planName = `${s.name.replace('方案', '')}计划`
 
   // 代入农事作业执行计划
-  if (s.cropCategory === '水稻') {
-    form.value.farmingItems = [
-      { growthPeriod: '播种期', productionProcess: '土壤准备', taskLink: '整地', farmingDays: 5, coreStandard: '耕深均匀，无大坷垃', paramStandard: '耕深≥30cm', workMethod: '农机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '播种期', productionProcess: '播种作业', taskLink: '播种', farmingDays: 3, coreStandard: '行距30cm，穴距15cm', paramStandard: '播深3-5cm', workMethod: '农机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '分蘖期', productionProcess: '田间管理', taskLink: '追肥', farmingDays: 7, coreStandard: '亩施尿素10kg', paramStandard: '施肥深度10cm', workMethod: '人工作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '分蘖期', productionProcess: '田间管理', taskLink: '灌溉', farmingDays: 10, coreStandard: '浅水间歇灌溉', paramStandard: '水层3-5cm', workMethod: '智能设备作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '拔节期', productionProcess: '植保防治', taskLink: '病虫害防治', farmingDays: 3, coreStandard: '及时发现及时防治', paramStandard: '用药浓度0.1%', workMethod: '无人机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '抽穗期', productionProcess: '水肥管理', taskLink: '追肥', farmingDays: 5, coreStandard: '穗肥追施', paramStandard: '亩施尿素5kg', workMethod: '人工作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '灌浆期', productionProcess: '田间管理', taskLink: '灌溉', farmingDays: 15, coreStandard: '干湿交替灌溉', paramStandard: '水层2-3cm', workMethod: '智能设备作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '成熟期', productionProcess: '收获作业', taskLink: '收获', farmingDays: 5, coreStandard: '适时收获，防止落粒', paramStandard: '含水率≤25%', workMethod: '农机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-    ]
-  } else {
-    form.value.farmingItems = [
-      { growthPeriod: '播种期', productionProcess: '土壤准备', taskLink: '整地', farmingDays: 5, coreStandard: '耕深均匀，土壤细碎', paramStandard: '耕深≥25cm', workMethod: '农机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '播种期', productionProcess: '播种作业', taskLink: '播种', farmingDays: 3, coreStandard: '均匀播种，覆土压实', paramStandard: '播深4-5cm', workMethod: '农机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '生长期', productionProcess: '田间管理', taskLink: '追肥', farmingDays: 7, coreStandard: '科学追肥，促进生长', paramStandard: '亩施尿素8kg', workMethod: '人工作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '生长期', productionProcess: '植保防治', taskLink: '病虫害防治', farmingDays: 3, coreStandard: '综合防治，绿色防控', paramStandard: '用药浓度0.08%', workMethod: '无人机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-      { growthPeriod: '成熟期', productionProcess: '收获作业', taskLink: '收获', farmingDays: 5, coreStandard: '适时收获，减少损失', paramStandard: '含水率≤20%', workMethod: '农机作业', planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '', execStatus: 'pending', remark: '' },
-    ]
+  const baseFarmingItems: FarmingExecItem[] = s.cropCategory === '水稻'
+    ? [
+        { growthPeriod: '播种期', productionProcess: '土壤准备', taskLink: '整地', minLeafAge: '', maxLeafAge: '', coreStandard: '耕深均匀，无大坷垃', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '耕深≥30cm', workMethod: '农机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '播种期', productionProcess: '播种作业', taskLink: '播种', minLeafAge: '', maxLeafAge: '', coreStandard: '行距30cm，穴距15cm', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '播深3-5cm', workMethod: '农机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '分蘖期', productionProcess: '田间管理', taskLink: '追肥', minLeafAge: 3, maxLeafAge: 5, coreStandard: '亩施尿素10kg', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '施肥深度10cm', workMethod: '人工作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '分蘖期', productionProcess: '田间管理', taskLink: '灌溉', minLeafAge: 3, maxLeafAge: 6, coreStandard: '浅水间歇灌溉', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '水层3-5cm', workMethod: '智能设备作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '拔节期', productionProcess: '植保防治', taskLink: '病虫害防治', minLeafAge: 7, maxLeafAge: 9, coreStandard: '及时发现及时防治', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '用药浓度0.1%', workMethod: '无人机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '抽穗期', productionProcess: '水肥管理', taskLink: '追肥', minLeafAge: 10, maxLeafAge: 12, coreStandard: '穗肥追施', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '亩施尿素5kg', workMethod: '人工作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '灌浆期', productionProcess: '田间管理', taskLink: '灌溉', minLeafAge: 13, maxLeafAge: 15, coreStandard: '干湿交替灌溉', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '水层2-3cm', workMethod: '智能设备作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '成熟期', productionProcess: '收获作业', taskLink: '收获', minLeafAge: 16, maxLeafAge: 18, coreStandard: '适时收获，防止落粒', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '含水率≤25%', workMethod: '农机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+      ]
+    : [
+        { growthPeriod: '播种期', productionProcess: '土壤准备', taskLink: '整地', minLeafAge: '', maxLeafAge: '', coreStandard: '耕深均匀，土壤细碎', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '耕深≥25cm', workMethod: '农机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '播种期', productionProcess: '播种作业', taskLink: '播种', minLeafAge: '', maxLeafAge: '', coreStandard: '均匀播种，覆土压实', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '播深4-5cm', workMethod: '农机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '生长期', productionProcess: '田间管理', taskLink: '追肥', minLeafAge: 2, maxLeafAge: 4, coreStandard: '科学追肥，促进生长', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '亩施尿素8kg', workMethod: '人工作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '生长期', productionProcess: '植保防治', taskLink: '病虫害防治', minLeafAge: 5, maxLeafAge: 7, coreStandard: '综合防治，绿色防控', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '用药浓度0.08%', workMethod: '无人机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+        { growthPeriod: '成熟期', productionProcess: '收获作业', taskLink: '收获', minLeafAge: 10, maxLeafAge: 12, coreStandard: '适时收获，减少损失', envControlReq: '', planStartDate: '', planEndDate: '', paramStandard: '含水率≤20%', workMethod: '农机作业', planWorkArea: '', planEquipment: '', execStatus: 'pending_issue', workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '', remark: '' },
+      ]
+
+  // 设施种植模式填充设施环境管控要求，隐藏叶龄
+  if (s.plantingMode === '设施种植') {
+    for (const item of baseFarmingItems) {
+      item.minLeafAge = ''
+      item.maxLeafAge = ''
+      if (item.taskLink === '灌溉') item.envControlReq = '温度25-28℃，湿度60-70%'
+      if (item.taskLink === '追肥') item.envControlReq = '通风换气2小时后施肥'
+      if (item.taskLink === '病虫害防治') item.envControlReq = '密闭熏蒸6小时后通风'
+    }
   }
+
+  form.value.farmingItems = baseFarmingItems
 
   // 代入农资投入计划
   if (s.cropCategory === '水稻') {
@@ -1233,10 +1381,12 @@ function generateCode(): string {
 // ==================== 行操作 ====================
 function addFarmingRow(): void {
   form.value.farmingItems.push({
-    growthPeriod: '', productionProcess: '', taskLink: '', farmingDays: '',
-    coreStandard: '', paramStandard: '', workMethod: '',
-    planStartDate: '', planEndDate: '', actualStartDate: '', actualEndDate: '',
-    execStatus: 'pending', remark: '',
+    growthPeriod: '', productionProcess: '', taskLink: '',
+    minLeafAge: '', maxLeafAge: '', coreStandard: '', envControlReq: '',
+    planStartDate: '', planEndDate: '', paramStandard: '', workMethod: '',
+    planWorkArea: '', planEquipment: '', execStatus: 'pending_issue',
+    workLeader: '', workExecutor: '', actualCompleteTime: '', execRecordCode: '',
+    remark: '',
   })
 }
 
