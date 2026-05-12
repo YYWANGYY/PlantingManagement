@@ -86,10 +86,6 @@
               <p class="mt-0.5 text-sm">{{ planInfo.planArea }} 亩</p>
             </div>
             <div>
-              <span class="text-xs text-muted-foreground">种植单元编码</span>
-              <p class="mt-0.5 font-mono text-xs">{{ planInfo.resourceCodes }}</p>
-            </div>
-            <div>
               <span class="text-xs text-muted-foreground">计划播种/定植开始时间</span>
               <p class="mt-0.5 text-sm">{{ planInfo.planStartTime }}</p>
             </div>
@@ -118,6 +114,47 @@
             <span class="text-xs text-muted-foreground">备注</span>
             <p class="mt-0.5 text-sm">{{ planInfo.remark }}</p>
           </div>
+        </div>
+      </div>
+
+      <!-- 资源信息（只读） -->
+      <div class="rounded-lg border">
+        <div class="border-b bg-muted/30 px-4 py-3">
+          <h3 class="text-sm font-semibold">种植资源信息</h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b bg-muted/20">
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">序号</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块编号</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块名称</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块类型</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块面积(亩)</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">所属园区/农场</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">状态</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(r, idx) in resourceList" :key="idx" class="border-b hover:bg-muted/10">
+                <td class="px-4 py-2">{{ idx + 1 }}</td>
+                <td class="px-4 py-2 font-mono text-xs">{{ r.code }}</td>
+                <td class="px-4 py-2">{{ r.name }}</td>
+                <td class="px-4 py-2">{{ r.type }}</td>
+                <td class="px-4 py-2">{{ r.area }}</td>
+                <td class="px-4 py-2">{{ r.belong }}</td>
+                <td class="px-4 py-2">
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                    :class="r.status === '可用' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-600'">
+                    {{ r.status }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="border-t bg-muted/10 px-4 py-2 text-sm text-muted-foreground">
+          共 {{ resourceList.length }} 个地块，资产面积合计：{{ planInfo.assetArea }} 亩
         </div>
       </div>
 
@@ -225,241 +262,161 @@
       </div>
     </div>
 
-    <!-- Tab 2: 农事任务 -->
+    <!-- Tab 2: 农事任务（列表只读 + 批量下发） -->
     <div v-if="activeTab === 'task'" class="space-y-4">
       <div class="flex items-center justify-between">
         <p class="text-sm text-muted-foreground">
           共 {{ taskList.length }} 条农事任务（与种植作业执行计划明细表一一对应）
         </p>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-          @click="handleBatchIssue"
-        >
-          <Send class="h-4 w-4" />
-          批量下发任务
-        </button>
+        <div class="flex items-center gap-2">
+          <span v-if="selectedTaskCodes.size > 0" class="text-sm text-muted-foreground">
+            已选 {{ selectedTaskCodes.size }} 条
+          </span>
+          <button
+            :disabled="selectedTaskCodes.size === 0"
+            class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="openDispatchDialog('batch')"
+          >
+            <Send class="h-4 w-4" />
+            批量下发
+          </button>
+        </div>
       </div>
 
-      <!-- 任务卡片列表 -->
-      <div v-for="(task, tIdx) in taskList" :key="tIdx" class="rounded-lg border">
-        <!-- 卡片头 -->
-        <div class="flex items-center justify-between border-b bg-muted/30 px-4 py-3">
-          <div class="flex items-center gap-3">
-            <span class="text-sm font-semibold">任务 {{ tIdx + 1 }}</span>
-            <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
-              :class="taskStatusBadge(task.taskStatus)">
-              {{ taskStatusLabel(task.taskStatus) }}
-            </span>
-          </div>
-          <div class="flex items-center gap-2">
-            <span class="text-xs text-muted-foreground">子任务单编码：{{ task.taskCode }}</span>
-            <button
-              v-if="task.taskStatus === 'pending'"
-              class="inline-flex items-center justify-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
-              @click="handleIssueSingle(tIdx)"
-            >
-              下发任务
-            </button>
-          </div>
+      <!-- 任务列表（表格） -->
+      <div class="rounded-lg border">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b bg-muted/20">
+                <th class="px-3 py-2 text-left w-10">
+                  <input
+                    type="checkbox"
+                    :checked="isAllSelected"
+                    :indeterminate="isIndeterminate"
+                    class="h-4 w-4 rounded border-gray-300"
+                    @change="toggleSelectAll"
+                  />
+                </th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">序号</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">子任务单编码</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">地块名称</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">地块类型</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划作业面积(亩)</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">生育时期</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">生产流程</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业环节</th>
+                <th v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2 text-left font-medium whitespace-nowrap">最小叶龄</th>
+                <th v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2 text-left font-medium whitespace-nowrap">最大叶龄</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">核心农事操作标准</th>
+                <th v-if="planInfo.plantingMode === '设施种植'" class="px-3 py-2 text-left font-medium whitespace-nowrap">设施环境管控要求</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业参数要求</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业方式</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划开始时间</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划结束时间</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划农资需求</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">计划作业设备/农机</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业负责人</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">作业执行人</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">任务状态</th>
+                <th class="px-3 py-2 text-left font-medium whitespace-nowrap">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(task, tIdx) in taskList" :key="tIdx" class="border-b hover:bg-muted/10">
+                <td class="px-3 py-2">
+                  <input
+                    v-if="task.taskStatus === 'pending'"
+                    type="checkbox"
+                    :checked="selectedTaskCodes.has(task.taskCode)"
+                    class="h-4 w-4 rounded border-gray-300"
+                    @change="toggleSelect(task.taskCode)"
+                  />
+                </td>
+                <td class="px-3 py-2">{{ tIdx + 1 }}</td>
+                <td class="px-3 py-2 font-mono text-xs">{{ task.taskCode }}</td>
+                <td class="px-3 py-2">{{ task.plotName || '-' }}</td>
+                <td class="px-3 py-2">{{ task.plotType || '-' }}</td>
+                <td class="px-3 py-2">{{ task.planArea }}</td>
+                <td class="px-3 py-2">{{ task.growthStage }}</td>
+                <td class="px-3 py-2">{{ task.productionProcess }}</td>
+                <td class="px-3 py-2">{{ task.workStep }}</td>
+                <td v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2">{{ task.minLeafAge ?? '-' }}</td>
+                <td v-if="planInfo.plantingMode === '大田种植'" class="px-3 py-2">{{ task.maxLeafAge ?? '-' }}</td>
+                <td class="px-3 py-2" :title="task.coreStandard">{{ task.coreStandard?.length > 12 ? task.coreStandard.substring(0, 12) + '...' : task.coreStandard }}</td>
+                <td v-if="planInfo.plantingMode === '设施种植'" class="px-3 py-2">{{ task.envRequirement || '-' }}</td>
+                <td class="px-3 py-2">{{ task.workParamReq }}</td>
+                <td class="px-3 py-2">{{ task.workMethod }}</td>
+                <td class="px-3 py-2 whitespace-nowrap">{{ task.planStartTime }}</td>
+                <td class="px-3 py-2 whitespace-nowrap">{{ task.planEndTime }}</td>
+                <td class="px-3 py-2">{{ task.materialDemand || '-' }}</td>
+                <td class="px-3 py-2">{{ task.planEquipment || '-' }}</td>
+                <td class="px-3 py-2">{{ task.workLeader }}</td>
+                <td class="px-3 py-2">{{ task.workExecutor }}</td>
+                <td class="px-3 py-2">
+                  <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                    :class="taskStatusBadge(task.taskStatus)">
+                    {{ taskStatusLabel(task.taskStatus) }}
+                  </span>
+                </td>
+                <td class="px-3 py-2">
+                  <button
+                    v-if="task.taskStatus === 'pending'"
+                    class="text-primary hover:text-primary/80 text-xs font-medium"
+                    @click="openDispatchDialog('single', task.taskCode)"
+                  >
+                    下发
+                  </button>
+                  <span v-else class="text-xs text-muted-foreground">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
+    </div>
 
-        <!-- 卡片内容：两列布局 -->
-        <div class="p-4">
-          <div class="grid grid-cols-1 gap-x-8 gap-y-3 lg:grid-cols-3">
-            <!-- 计划编号 -->
+    <!-- 下发目标选择弹框 -->
+    <div v-if="dispatchDialogVisible" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="dispatchDialogVisible = false">
+      <div class="w-full max-w-md rounded-lg bg-background shadow-lg border">
+        <div class="border-b px-6 py-4">
+          <h3 class="text-lg font-semibold">选择下发系统</h3>
+          <p class="mt-1 text-sm text-muted-foreground">
+            {{ dispatchMode === 'batch' ? `批量下发 ${selectedTaskCodes.size} 条任务至` : '下发任务至' }}
+          </p>
+        </div>
+        <div class="p-6 space-y-3">
+          <label
+            v-for="opt in dispatchTargets"
+            :key="opt.value"
+            class="flex items-center gap-3 rounded-lg border p-4 cursor-pointer transition-colors"
+            :class="selectedTarget === opt.value ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'"
+            @click="selectedTarget = opt.value"
+          >
+            <div class="flex h-5 w-5 items-center justify-center rounded-full border-2"
+              :class="selectedTarget === opt.value ? 'border-primary' : 'border-muted-foreground/30'">
+              <div v-if="selectedTarget === opt.value" class="h-2.5 w-2.5 rounded-full bg-primary" />
+            </div>
             <div>
-              <span class="text-xs text-muted-foreground">计划编号</span>
-              <p class="mt-0.5 font-mono text-sm">{{ task.planCode }}</p>
+              <p class="text-sm font-medium">{{ opt.label }}</p>
+              <p class="text-xs text-muted-foreground">{{ opt.desc }}</p>
             </div>
-            <!-- 计划名称 -->
-            <div>
-              <span class="text-xs text-muted-foreground">计划名称</span>
-              <p class="mt-0.5 text-sm">{{ task.planName }}</p>
-            </div>
-            <!-- 所属单位 -->
-            <div>
-              <span class="text-xs text-muted-foreground">所属单位</span>
-              <p class="mt-0.5 text-sm">{{ task.unit }}</p>
-            </div>
-            <!-- 地块名称 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">地块名称 <span class="text-red-500">*</span></label>
-              <select
-                v-model="task.plotName"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">请选择地块</option>
-                <option v-for="p in plotOptions" :key="p.code" :value="p.name">{{ p.name }}</option>
-              </select>
-            </div>
-            <!-- 地块类型 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">地块类型 <span class="text-red-500">*</span></label>
-              <select
-                v-model="task.plotType"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">请选择</option>
-                <option value="大田">大田</option>
-                <option value="大棚">大棚</option>
-                <option value="棚间地">棚间地</option>
-                <option value="所属耕地">所属耕地</option>
-              </select>
-            </div>
-            <!-- 计划作业面积 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">计划作业面积(亩) <span class="text-red-500">*</span></label>
-              <input
-                v-model.number="task.planArea"
-                type="number"
-                min="0"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 生育时期 -->
-            <div>
-              <span class="text-xs text-muted-foreground">生育时期</span>
-              <p class="mt-0.5 text-sm">{{ task.growthStage }}</p>
-            </div>
-            <!-- 生产流程 -->
-            <div>
-              <span class="text-xs text-muted-foreground">生产流程</span>
-              <p class="mt-0.5 text-sm">{{ task.productionProcess }}</p>
-            </div>
-            <!-- 作业环节 -->
-            <div>
-              <span class="text-xs text-muted-foreground">作业环节</span>
-              <p class="mt-0.5 text-sm">{{ task.workStep }}</p>
-            </div>
-            <!-- 最小叶龄（仅大田） -->
-            <div v-if="planInfo.plantingMode === '大田种植'">
-              <span class="text-xs text-muted-foreground">最小叶龄</span>
-              <p class="mt-0.5 text-sm">{{ task.minLeafAge ?? '-' }}</p>
-            </div>
-            <!-- 最大叶龄（仅大田） -->
-            <div v-if="planInfo.plantingMode === '大田种植'">
-              <span class="text-xs text-muted-foreground">最大叶龄</span>
-              <p class="mt-0.5 text-sm">{{ task.maxLeafAge ?? '-' }}</p>
-            </div>
-            <!-- 核心农事操作标准 -->
-            <div class="lg:col-span-2">
-              <label class="mb-1 block text-xs text-muted-foreground">核心农事操作标准</label>
-              <textarea
-                v-model="task.coreStandard"
-                rows="2"
-                class="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 设施环境管控要求（仅设施） -->
-            <div v-if="planInfo.plantingMode === '设施种植'" class="lg:col-span-2">
-              <label class="mb-1 block text-xs text-muted-foreground">设施环境管控要求</label>
-              <textarea
-                v-model="task.envRequirement"
-                rows="2"
-                class="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 作业参数要求 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">作业参数要求</label>
-              <input
-                v-model="task.workParamReq"
-                type="text"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 作业方式 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">作业方式</label>
-              <select
-                v-model="task.workMethod"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">请选择</option>
-                <option value="农机作业">农机作业</option>
-                <option value="人工作业">人工作业</option>
-                <option value="无人机作业">无人机作业</option>
-                <option value="智能设备">智能设备</option>
-              </select>
-            </div>
-            <!-- 计划开始时间 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">计划开始时间 <span class="text-red-500">*</span></label>
-              <input
-                v-model="task.planStartTime"
-                type="date"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 计划结束时间 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">计划结束时间 <span class="text-red-500">*</span></label>
-              <input
-                v-model="task.planEndTime"
-                type="date"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 计划农资需求 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">计划农资需求</label>
-              <input
-                v-model="task.materialDemand"
-                type="text"
-                placeholder="如：复合肥 50kg"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <!-- 计划作业设备/农机 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">计划作业设备/农机</label>
-              <select
-                v-model="task.planEquipment"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">请选择</option>
-                <option v-if="planInfo.plantingMode === '大田种植'" value="拖拉机">拖拉机</option>
-                <option v-if="planInfo.plantingMode === '大田种植'" value="播种机">播种机</option>
-                <option v-if="planInfo.plantingMode === '大田种植'" value="收割机">收割机</option>
-                <option v-if="planInfo.plantingMode === '大田种植'" value="植保无人机">植保无人机</option>
-                <option v-if="planInfo.plantingMode === '设施种植'" value="温控设备">温控设备</option>
-                <option v-if="planInfo.plantingMode === '设施种植'" value="灌溉系统">灌溉系统</option>
-                <option v-if="planInfo.plantingMode === '设施种植'" value="施肥机">施肥机</option>
-              </select>
-            </div>
-            <!-- 作业负责人 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">作业负责人 <span class="text-red-500">*</span></label>
-              <select
-                v-model="task.workLeader"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">请选择</option>
-                <option v-for="p in personnelOptions" :key="p" :value="p">{{ p }}</option>
-              </select>
-            </div>
-            <!-- 作业执行人 -->
-            <div>
-              <label class="mb-1 block text-xs text-muted-foreground">作业执行人 <span class="text-red-500">*</span></label>
-              <select
-                v-model="task.workExecutor"
-                class="h-8 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              >
-                <option value="">请选择</option>
-                <option v-for="p in personnelOptions" :key="p" :value="p">{{ p }}</option>
-              </select>
-            </div>
-            <!-- 备注 -->
-            <div class="lg:col-span-3">
-              <label class="mb-1 block text-xs text-muted-foreground">备注</label>
-              <textarea
-                v-model="task.remark"
-                rows="2"
-                placeholder="请输入备注信息"
-                class="w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-          </div>
+          </label>
+        </div>
+        <div class="flex justify-end gap-3 border-t px-6 py-4">
+          <button
+            class="rounded-md border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
+            @click="dispatchDialogVisible = false"
+          >
+            取消
+          </button>
+          <button
+            :disabled="!selectedTarget"
+            class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            @click="confirmDispatch"
+          >
+            确认下发
+          </button>
         </div>
       </div>
     </div>
@@ -467,7 +424,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Send } from 'lucide-vue-next'
 import { showToast } from '@/lib/toast'
@@ -489,7 +446,6 @@ interface PlanInfo {
   cropVariety: string
   assetArea: number
   planArea: number
-  resourceCodes: string
   planStartTime: string
   planEndTime: string
   planLeader: string
@@ -498,6 +454,15 @@ interface PlanInfo {
   effectiveTime: string
   progressStatus: ProgressStatus
   remark: string
+}
+
+interface ResourceItem {
+  code: string
+  name: string
+  type: string
+  area: number
+  belong: string
+  status: string
 }
 
 interface FarmingExecRow {
@@ -577,7 +542,6 @@ const planInfo = ref<PlanInfo>({
   cropVariety: '',
   assetArea: 0,
   planArea: 0,
-  resourceCodes: '',
   planStartTime: '',
   planEndTime: '',
   planLeader: '',
@@ -588,20 +552,88 @@ const planInfo = ref<PlanInfo>({
   remark: '',
 })
 
+const resourceList = ref<ResourceItem[]>([])
 const farmingList = ref<FarmingExecRow[]>([])
 const materialList = ref<MaterialRow[]>([])
 const taskList = ref<TaskItem[]>([])
 
-const plotOptions = [
-  { code: 'JH0077001', name: '良乡地块A-01' },
-  { code: 'JH0077002', name: '良乡地块A-02' },
-  { code: 'JH0077003', name: '良乡地块B-01' },
-  { code: 'JH0078001', name: '通州地块C-01' },
-  { code: 'JH0078002', name: '通州地块C-02' },
-  { code: 'JH0079001', name: '唐山地块D-01' },
+// 选择状态
+const selectedTaskCodes = ref<Set<string>>(new Set())
+const dispatchDialogVisible = ref(false)
+const dispatchMode = ref<'single' | 'batch'>('single')
+const singleTaskCode = ref('')
+const selectedTarget = ref('')
+
+const dispatchTargets = [
+  { value: 'farm_machinery', label: '农机系统', desc: '适用于大田种植的农机作业任务，自动分配农机资源' },
+  { value: 'facility', label: '设施系统', desc: '适用于设施种植的环境管控与设备作业任务' },
+  { value: 'manual', label: '本系统（人工作业）', desc: '适用于人工作业任务，在本系统中进行任务派发与跟踪' },
 ]
 
-const personnelOptions = ['张三', '李四', '王五', '赵六', '孙七', '周八']
+const isAllSelected = computed(() => {
+  const pendingTasks = taskList.value.filter(t => t.taskStatus === 'pending')
+  return pendingTasks.length > 0 && pendingTasks.every(t => selectedTaskCodes.value.has(t.taskCode))
+})
+
+const isIndeterminate = computed(() => {
+  const pendingTasks = taskList.value.filter(t => t.taskStatus === 'pending')
+  const selectedPending = pendingTasks.filter(t => selectedTaskCodes.value.has(t.taskCode))
+  return selectedPending.length > 0 && selectedPending.length < pendingTasks.length
+})
+
+function toggleSelectAll(): void {
+  const pendingTasks = taskList.value.filter(t => t.taskStatus === 'pending')
+  if (pendingTasks.every(t => selectedTaskCodes.value.has(t.taskCode))) {
+    // 全部取消
+    pendingTasks.forEach(t => selectedTaskCodes.value.delete(t.taskCode))
+  } else {
+    // 全部选中
+    pendingTasks.forEach(t => selectedTaskCodes.value.add(t.taskCode))
+  }
+}
+
+function toggleSelect(code: string): void {
+  if (selectedTaskCodes.value.has(code)) {
+    selectedTaskCodes.value.delete(code)
+  } else {
+    selectedTaskCodes.value.add(code)
+  }
+}
+
+function openDispatchDialog(mode: 'single' | 'batch', code?: string): void {
+  dispatchMode.value = mode
+  selectedTarget.value = ''
+  if (mode === 'single' && code) {
+    singleTaskCode.value = code
+  }
+  dispatchDialogVisible.value = true
+}
+
+function confirmDispatch(): void {
+  if (!selectedTarget) return
+
+  const targetLabel = dispatchTargets.find(t => t.value === selectedTarget.value)?.label ?? ''
+
+  if (dispatchMode.value === 'single') {
+    const task = taskList.value.find(t => t.taskCode === singleTaskCode.value)
+    if (task) {
+      task.taskStatus = 'issued'
+    }
+    showToast({ message: `任务已下发至【${targetLabel}】`, type: 'success' })
+  } else {
+    let count = 0
+    taskList.value.forEach(t => {
+      if (selectedTaskCodes.value.has(t.taskCode) && t.taskStatus === 'pending') {
+        t.taskStatus = 'issued'
+        count++
+      }
+    })
+    selectedTaskCodes.value.clear()
+    showToast({ message: `已批量下发 ${count} 条任务至【${targetLabel}】`, type: 'success' })
+  }
+
+  dispatchDialogVisible.value = false
+}
 
 // ==================== 状态映射 ====================
 function progressStatusLabel(status: ProgressStatus): string {
@@ -695,7 +727,6 @@ function loadMockData(): void {
     cropVariety: '冬小麦',
     assetArea: 1200,
     planArea: 1000,
-    resourceCodes: 'JH0077, JH0078, JH0079',
     planStartTime: '2025-03-01',
     planEndTime: '2025-07-15',
     planLeader: '张三',
@@ -705,6 +736,16 @@ function loadMockData(): void {
     progressStatus: 'pending_issue',
     remark: '2025年度冬小麦种植计划，覆盖北京公司全部大田区域',
   }
+
+  // 模拟资源信息
+  resourceList.value = [
+    { code: 'JH0077001', name: '良乡地块A-01', type: '大田', area: 300, belong: '良乡园区', status: '可用' },
+    { code: 'JH0077002', name: '良乡地块A-02', type: '大田', area: 250, belong: '良乡园区', status: '可用' },
+    { code: 'JH0077003', name: '良乡地块B-01', type: '大田', area: 200, belong: '良乡园区', status: '可用' },
+    { code: 'JH0078001', name: '通州地块C-01', type: '大田', area: 200, belong: '通州园区', status: '可用' },
+    { code: 'JH0078002', name: '通州地块C-02', type: '大田', area: 150, belong: '通州园区', status: '可用' },
+    { code: 'JH0079001', name: '唐山地块D-01', type: '大田', area: 100, belong: '唐山园区', status: '可用' },
+  ]
 
   // 模拟种植作业执行计划明细
   farmingList.value = [
@@ -729,13 +770,24 @@ function loadMockData(): void {
   ]
 
   // 农事任务 - 与种植作业执行计划明细表一对一
+  const plotAssignments = [
+    { name: '良乡地块A-01', type: '大田', area: 300 },
+    { name: '良乡地块A-02', type: '大田', area: 250 },
+    { name: '良乡地块B-01', type: '大田', area: 200 },
+    { name: '通州地块C-01', type: '大田', area: 200 },
+    { name: '通州地块C-02', type: '大田', area: 150 },
+    { name: '唐山地块D-01', type: '大田', area: 100 },
+    { name: '良乡地块A-01', type: '大田', area: 300 },
+    { name: '良乡地块A-02', type: '大田', area: 250 },
+  ]
+
   taskList.value = farmingList.value.map((row, idx) => ({
     taskCode: `TASK-${planInfo.value.planCode}-${String(idx + 1).padStart(3, '0')}`,
     planCode: planInfo.value.planCode,
     planName: planInfo.value.planName,
     unit: planInfo.value.unit,
-    plotName: '',
-    plotType: '',
+    plotName: plotAssignments[idx]?.name ?? '',
+    plotType: plotAssignments[idx]?.type ?? '',
     planArea: row.planArea,
     growthStage: row.growthStage,
     productionProcess: row.productionProcess,
@@ -760,21 +812,5 @@ function loadMockData(): void {
 // ==================== 操作 ====================
 function goBack(): void {
   router.push('/planting-schedule')
-}
-
-function handleIssueSingle(idx: number): void {
-  taskList.value[idx].taskStatus = 'issued'
-  showToast({ message: `任务 ${idx + 1} 已下发成功`, type: 'success' })
-}
-
-function handleBatchIssue(): void {
-  let count = 0
-  taskList.value.forEach((t) => {
-    if (t.taskStatus === 'pending') {
-      t.taskStatus = 'issued'
-      count++
-    }
-  })
-  showToast({ message: `已批量下发 ${count} 条任务`, type: 'success' })
 }
 </script>
