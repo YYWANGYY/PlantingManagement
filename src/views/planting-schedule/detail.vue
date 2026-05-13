@@ -291,36 +291,48 @@
         <div
           v-for="(task, tIdx) in paginatedTasks"
           :key="tIdx"
-          class="rounded-lg border bg-background shadow-sm overflow-hidden"
+          class="rounded-lg border bg-background shadow-sm overflow-hidden transition-shadow hover:shadow-md"
         >
           <!-- 卡片头部 -->
           <div
-            class="flex items-center justify-between px-5 py-3 bg-muted/30 border-b cursor-pointer select-none"
-            @click="toggleCardCollapse(task.taskCode)"
+            class="flex items-center justify-between px-5 py-3 bg-muted/30 border-b select-none"
           >
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0">
               <input
                 v-if="task.taskStatus === 'pending'"
                 type="checkbox"
                 :checked="selectedTaskCodes.has(task.taskCode)"
-                class="h-4 w-4 rounded border-gray-300"
+                class="h-4 w-4 rounded border-gray-300 shrink-0"
                 @click.stop
                 @change="toggleSelect(task.taskCode)"
               />
-              <component
-                :is="collapsedCards.has(task.taskCode) ? ChevronRight : ChevronDown"
-                class="h-4 w-4 text-muted-foreground transition-transform"
-              />
-              <span class="text-sm font-semibold">第 {{ (taskCurrentPage - 1) * taskPageSize + tIdx + 1 }} 项</span>
-              <span class="text-xs text-muted-foreground font-mono">{{ task.taskCode }}</span>
+              <button
+                class="inline-flex items-center justify-center h-6 w-6 rounded hover:bg-muted transition-colors shrink-0"
+                :title="isCardCollapsed(task.taskCode) ? '展开' : '折叠'"
+                @click="toggleCardCollapse(task.taskCode)"
+              >
+                <component
+                  :is="isCardCollapsed(task.taskCode) ? ChevronRight : ChevronDown"
+                  class="h-4 w-4 text-muted-foreground transition-transform duration-200"
+                />
+              </button>
+              <span class="text-sm font-semibold shrink-0">第 {{ (taskCurrentPage - 1) * taskPageSize + tIdx + 1 }} 项</span>
+              <span class="text-xs text-muted-foreground font-mono truncate">{{ task.taskCode }}</span>
               <span
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium shrink-0"
                 :class="taskStatusBadge(task.taskStatus)"
               >
                 {{ taskStatusLabel(task.taskStatus) }}
               </span>
+              <!-- 折叠时显示摘要信息 -->
+              <template v-if="isCardCollapsed(task.taskCode)">
+                <span class="text-xs text-muted-foreground hidden lg:inline">|</span>
+                <span class="text-xs text-muted-foreground hidden lg:inline truncate">{{ task.growthStage }} · {{ task.workStep }}</span>
+                <span class="text-xs text-muted-foreground hidden xl:inline truncate">{{ task.planStartTime }} ~ {{ task.planEndTime }}</span>
+                <span class="text-xs text-muted-foreground hidden xl:inline">{{ task.planArea }} 亩</span>
+              </template>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 shrink-0">
               <button
                 v-if="task.taskStatus === 'pending'"
                 class="text-primary hover:text-primary/80 text-xs font-medium"
@@ -331,80 +343,90 @@
             </div>
           </div>
 
-          <!-- 卡片内容（可折叠） -->
-          <div v-show="!collapsedCards.has(task.taskCode)">
-            <!-- 基本信息 -->
-            <div class="px-5 py-4">
-              <h4 class="text-sm font-semibold mb-3 text-foreground/80">基本信息</h4>
-              <div class="grid grid-cols-4 gap-x-6 gap-y-2.5 text-sm">
-                <div><span class="text-muted-foreground">计划编号：</span>{{ task.planCode }}</div>
-                <div><span class="text-muted-foreground">计划名称：</span>{{ task.planName }}</div>
-                <div><span class="text-muted-foreground">所属单位：</span>{{ task.unit }}</div>
-                <div><span class="text-muted-foreground">地块名称：</span>{{ task.plotName || '-' }}</div>
-                <div><span class="text-muted-foreground">地块类型：</span>{{ task.plotType || '-' }}</div>
-                <div><span class="text-muted-foreground">计划作业面积：</span>{{ task.planArea }} 亩</div>
-                <div><span class="text-muted-foreground">生育时期：</span>{{ task.growthStage }}</div>
-                <div><span class="text-muted-foreground">生产流程：</span>{{ task.productionProcess }}</div>
-                <div><span class="text-muted-foreground">作业环节：</span>{{ task.workStep }}</div>
-                <div v-if="planInfo.plantingMode === '大田种植'"><span class="text-muted-foreground">最小叶龄：</span>{{ task.minLeafAge ?? '-' }}</div>
-                <div v-if="planInfo.plantingMode === '大田种植'"><span class="text-muted-foreground">最大叶龄：</span>{{ task.maxLeafAge ?? '-' }}</div>
-                <div><span class="text-muted-foreground">核心农事操作标准：</span>{{ task.coreStandard || '-' }}</div>
-                <div v-if="planInfo.plantingMode === '设施种植'"><span class="text-muted-foreground">设施环境管控要求：</span>{{ task.envRequirement || '-' }}</div>
-                <div><span class="text-muted-foreground">作业参数要求：</span>{{ task.workParamReq || '-' }}</div>
-                <div><span class="text-muted-foreground">作业方式：</span>{{ task.workMethod || '-' }}</div>
-                <div><span class="text-muted-foreground">计划开始时间：</span>{{ task.planStartTime }}</div>
-                <div><span class="text-muted-foreground">计划结束时间：</span>{{ task.planEndTime }}</div>
-                <div><span class="text-muted-foreground">计划作业设备/农机：</span>{{ task.planEquipment || '-' }}</div>
-                <div><span class="text-muted-foreground">作业负责人：</span>{{ task.workLeader }}</div>
-                <div><span class="text-muted-foreground">作业执行人：</span>{{ task.workExecutor }}</div>
-                <div class="col-span-4"><span class="text-muted-foreground">备注：</span>{{ task.remark || '-' }}</div>
+          <!-- 卡片内容（可折叠，带过渡动画） -->
+          <Transition
+            name="card-collapse"
+            @before-enter="onBeforeEnter"
+            @enter="onEnter"
+            @after-enter="onAfterEnter"
+            @before-leave="onBeforeLeave"
+            @leave="onLeave"
+            @after-leave="onAfterLeave"
+          >
+            <div v-show="!isCardCollapsed(task.taskCode)">
+              <!-- 基本信息 -->
+              <div class="px-5 py-4">
+                <h4 class="text-sm font-semibold mb-3 text-foreground/80">基本信息</h4>
+                <div class="grid grid-cols-4 gap-x-6 gap-y-2.5 text-sm">
+                  <div><span class="text-muted-foreground">计划编号：</span>{{ task.planCode }}</div>
+                  <div><span class="text-muted-foreground">计划名称：</span>{{ task.planName }}</div>
+                  <div><span class="text-muted-foreground">所属单位：</span>{{ task.unit }}</div>
+                  <div><span class="text-muted-foreground">地块名称：</span>{{ task.plotName || '-' }}</div>
+                  <div><span class="text-muted-foreground">地块类型：</span>{{ task.plotType || '-' }}</div>
+                  <div><span class="text-muted-foreground">计划作业面积：</span>{{ task.planArea }} 亩</div>
+                  <div><span class="text-muted-foreground">生育时期：</span>{{ task.growthStage }}</div>
+                  <div><span class="text-muted-foreground">生产流程：</span>{{ task.productionProcess }}</div>
+                  <div><span class="text-muted-foreground">作业环节：</span>{{ task.workStep }}</div>
+                  <div v-if="planInfo.plantingMode === '大田种植'"><span class="text-muted-foreground">最小叶龄：</span>{{ task.minLeafAge ?? '-' }}</div>
+                  <div v-if="planInfo.plantingMode === '大田种植'"><span class="text-muted-foreground">最大叶龄：</span>{{ task.maxLeafAge ?? '-' }}</div>
+                  <div><span class="text-muted-foreground">核心农事操作标准：</span>{{ task.coreStandard || '-' }}</div>
+                  <div v-if="planInfo.plantingMode === '设施种植'"><span class="text-muted-foreground">设施环境管控要求：</span>{{ task.envRequirement || '-' }}</div>
+                  <div><span class="text-muted-foreground">作业参数要求：</span>{{ task.workParamReq || '-' }}</div>
+                  <div><span class="text-muted-foreground">作业方式：</span>{{ task.workMethod || '-' }}</div>
+                  <div><span class="text-muted-foreground">计划开始时间：</span>{{ task.planStartTime }}</div>
+                  <div><span class="text-muted-foreground">计划结束时间：</span>{{ task.planEndTime }}</div>
+                  <div><span class="text-muted-foreground">计划作业设备/农机：</span>{{ task.planEquipment || '-' }}</div>
+                  <div><span class="text-muted-foreground">作业负责人：</span>{{ task.workLeader }}</div>
+                  <div><span class="text-muted-foreground">作业执行人：</span>{{ task.workExecutor }}</div>
+                  <div class="col-span-4"><span class="text-muted-foreground">备注：</span>{{ task.remark || '-' }}</div>
+                </div>
               </div>
-            </div>
 
-            <!-- 计划农资需求明细 -->
-            <div class="px-5 pb-4">
-              <h4 class="text-sm font-semibold mb-3 text-foreground/80">计划农资需求明细</h4>
-              <div class="rounded-md border overflow-hidden">
-                <table class="w-full text-xs">
-                  <thead>
-                    <tr class="border-b bg-muted/20">
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">任务编号</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">农资大类</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">农资品类</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">有效成分/规格</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">标准用量</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计量单位</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">原计划耗用数量</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计划投入预算(元)</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">需求使用时间</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">责任人</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计划单价(元)</th>
-                      <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">备注</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr v-if="task.materialDetails.length === 0">
-                      <td colspan="12" class="px-2 py-3 text-center text-muted-foreground">暂无农资需求明细</td>
-                    </tr>
-                    <tr v-for="(m, mIdx) in task.materialDetails" :key="mIdx" class="border-b last:border-b-0 hover:bg-muted/10">
-                      <td class="px-2 py-1.5 font-mono">{{ m.taskCode }}</td>
-                      <td class="px-2 py-1.5">{{ m.materialCategory }}</td>
-                      <td class="px-2 py-1.5">{{ m.materialType }}</td>
-                      <td class="px-2 py-1.5">{{ m.specification }}</td>
-                      <td class="px-2 py-1.5">{{ m.standardDosage }}</td>
-                      <td class="px-2 py-1.5">{{ m.unit }}</td>
-                      <td class="px-2 py-1.5">{{ m.plannedQuantity }}</td>
-                      <td class="px-2 py-1.5">{{ m.plannedBudget.toFixed(2) }}</td>
-                      <td class="px-2 py-1.5 whitespace-nowrap">{{ m.demandTime }}</td>
-                      <td class="px-2 py-1.5">{{ m.responsiblePerson }}</td>
-                      <td class="px-2 py-1.5">{{ m.unitPrice.toFixed(2) }}</td>
-                      <td class="px-2 py-1.5">{{ m.remark || '-' }}</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <!-- 计划农资需求明细 -->
+              <div class="px-5 pb-4">
+                <h4 class="text-sm font-semibold mb-3 text-foreground/80">计划农资需求明细</h4>
+                <div class="rounded-md border overflow-hidden">
+                  <table class="w-full text-xs">
+                    <thead>
+                      <tr class="border-b bg-muted/20">
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">任务编号</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">农资大类</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">农资品类</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">有效成分/规格</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">标准用量</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计量单位</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">原计划耗用数量</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计划投入预算(元)</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">需求使用时间</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">责任人</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">计划单价(元)</th>
+                        <th class="px-2 py-1.5 text-left font-medium whitespace-nowrap">备注</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-if="task.materialDetails.length === 0">
+                        <td colspan="12" class="px-2 py-3 text-center text-muted-foreground">暂无农资需求明细</td>
+                      </tr>
+                      <tr v-for="(m, mIdx) in task.materialDetails" :key="mIdx" class="border-b last:border-b-0 hover:bg-muted/10">
+                        <td class="px-2 py-1.5 font-mono">{{ m.taskCode }}</td>
+                        <td class="px-2 py-1.5">{{ m.materialCategory }}</td>
+                        <td class="px-2 py-1.5">{{ m.materialType }}</td>
+                        <td class="px-2 py-1.5">{{ m.specification }}</td>
+                        <td class="px-2 py-1.5">{{ m.standardDosage }}</td>
+                        <td class="px-2 py-1.5">{{ m.unit }}</td>
+                        <td class="px-2 py-1.5">{{ m.plannedQuantity }}</td>
+                        <td class="px-2 py-1.5">{{ m.plannedBudget.toFixed(2) }}</td>
+                        <td class="px-2 py-1.5 whitespace-nowrap">{{ m.demandTime }}</td>
+                        <td class="px-2 py-1.5">{{ m.responsiblePerson }}</td>
+                        <td class="px-2 py-1.5">{{ m.unitPrice.toFixed(2) }}</td>
+                        <td class="px-2 py-1.5">{{ m.remark || '-' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
+          </Transition>
         </div>
       </div>
 
@@ -659,12 +681,28 @@ const materialList = ref<MaterialRow[]>([])
 const taskList = ref<TaskItem[]>([])
 
 // 选择状态
-const selectedTaskCodes = ref<Set<string>>(new Set())
-const collapsedCards = ref<Set<string>>(new Set())
+const selectedTaskCodes = ref(new Set<string>())
+const collapsedCards = ref(new Set<string>())
 const dispatchDialogVisible = ref(false)
 const dispatchMode = ref<'single' | 'batch'>('single')
 const singleTaskCode = ref('')
 const selectedTarget = ref('')
+
+// 判断卡片是否折叠
+function isCardCollapsed(taskCode: string): boolean {
+  return collapsedCards.value.has(taskCode)
+}
+
+// 切换单个卡片折叠/展开
+function toggleCardCollapse(taskCode: string): void {
+  const newSet = new Set(collapsedCards.value)
+  if (newSet.has(taskCode)) {
+    newSet.delete(taskCode)
+  } else {
+    newSet.add(taskCode)
+  }
+  collapsedCards.value = newSet
+}
 
 const dispatchTargets = [
   { value: 'farm_machinery', label: '农机系统', desc: '适用于大田种植的农机作业任务，自动分配农机资源' },
@@ -695,22 +733,57 @@ const taskVisiblePages = computed(() => {
 // 监听任务列表变化重置页码
 watch(taskList, () => { taskCurrentPage.value = 1 })
 
-const allCollapsed = computed(() => collapsedCards.value.size === paginatedTasks.value.length && paginatedTasks.value.length > 0)
+const allCollapsed = computed(() => {
+  const page = paginatedTasks.value
+  return page.length > 0 && page.every(t => collapsedCards.value.has(t.taskCode))
+})
 
 function toggleCollapseAll(): void {
   if (allCollapsed.value) {
-    collapsedCards.value.clear()
+    collapsedCards.value = new Set()
   } else {
-    paginatedTasks.value.forEach(t => collapsedCards.value.add(t.taskCode))
+    collapsedCards.value = new Set(paginatedTasks.value.map(t => t.taskCode))
   }
 }
 
-function toggleCardCollapse(taskCode: string): void {
-  if (collapsedCards.value.has(taskCode)) {
-    collapsedCards.value.delete(taskCode)
-  } else {
-    collapsedCards.value.add(taskCode)
-  }
+// Transition 钩子：折叠/展开动画
+function onBeforeEnter(el: Element): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.height = '0'
+  htmlEl.style.overflow = 'hidden'
+}
+function onEnter(el: Element, done: () => void): void {
+  const htmlEl = el as HTMLElement
+  requestAnimationFrame(() => {
+    htmlEl.style.transition = 'height 0.25s ease-out'
+    htmlEl.style.height = htmlEl.scrollHeight + 'px'
+    htmlEl.addEventListener('transitionend', () => done(), { once: true })
+  })
+}
+function onAfterEnter(el: Element): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.height = ''
+  htmlEl.style.overflow = ''
+  htmlEl.style.transition = ''
+}
+function onBeforeLeave(el: Element): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.height = htmlEl.scrollHeight + 'px'
+  htmlEl.style.overflow = 'hidden'
+}
+function onLeave(el: Element, done: () => void): void {
+  const htmlEl = el as HTMLElement
+  requestAnimationFrame(() => {
+    htmlEl.style.transition = 'height 0.2s ease-in'
+    htmlEl.style.height = '0'
+    htmlEl.addEventListener('transitionend', () => done(), { once: true })
+  })
+}
+function onAfterLeave(el: Element): void {
+  const htmlEl = el as HTMLElement
+  htmlEl.style.height = ''
+  htmlEl.style.overflow = ''
+  htmlEl.style.transition = ''
 }
 
 const pendingCount = computed(() => taskList.value.filter(t => t.taskStatus === 'pending').length)
