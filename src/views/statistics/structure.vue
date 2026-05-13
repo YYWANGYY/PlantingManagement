@@ -1,9 +1,18 @@
 <template>
   <div class="space-y-6">
     <!-- 页面标题 -->
-    <div>
-      <h1 class="text-2xl font-bold tracking-tight">种植结构表</h1>
-      <p class="mt-1 text-sm text-muted-foreground">当前种植季各作物面积占比与结构分析</p>
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">种植结构表</h1>
+        <p class="mt-1 text-sm text-muted-foreground">当前种植季各作物面积占比与结构分析</p>
+      </div>
+       <button
+        class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        @click="handleExport"
+      >
+          <Download class="h-4 w-4" />
+            导出        
+      </button>
     </div>
 
     <!-- 查询条件 -->
@@ -125,14 +134,7 @@
       <div class="flex items-center justify-between border-b px-6 py-4">
         <h3 class="text-lg font-semibold">表1-1：种植结构统计表</h3>
         <div class="flex items-center gap-4">
-          <div class="text-sm text-muted-foreground">单位：亩</div>
-          <button
-            class="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-            @click="handleExport"
-          >
-            <Download class="h-4 w-4" />
-            导出
-          </button>
+          <div class="text-sm text-muted-foreground">单位：亩</div>          
         </div>
       </div>
 
