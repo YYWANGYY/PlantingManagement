@@ -459,13 +459,6 @@
     <div v-if="activeTab === 'material'" class="space-y-4">
       <div class="flex items-center justify-between">
         <p class="text-sm text-muted-foreground">基于种植方案的农资投入标准，制定农资采购和使用计划</p>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-          @click="addMaterialRow"
-        >
-          <Plus class="h-3.5 w-3.5" />
-          添加明细
-        </button>
       </div>
       <div class="rounded-lg border">
         <div class="overflow-x-auto">
