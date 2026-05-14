@@ -330,12 +330,7 @@
     <div v-if="activeTab === 'farming'" class="space-y-4">
       <div class="flex items-center justify-between">
         <div class="text-sm text-muted-foreground space-y-1">
-          <p>基于种植方案的农事作业标准，制定执行计划的时间安排</p>
-          <div class="flex items-center gap-4 text-xs">
-            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-gray-400"></span> 引用方案代入-不可修改</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-blue-400"></span> 引用方案代入-可修改</span>
-            <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-green-400"></span> 特有字段</span>
-          </div>
+          <p>基于种植方案的农事作业标准，制定执行计划的时间安排</p>          
         </div>
       </div>
       <div class="rounded-lg border">

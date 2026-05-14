@@ -9,7 +9,7 @@
     "preview": "vite preview --port 5000",
     "lint": "eslint . --fix",
     "ts-check": "vue-tsc --noEmit",
-    "deploy:build": "pnpm install && pnpm run build"
+    "deploy:build": "pnpm install && vite build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
