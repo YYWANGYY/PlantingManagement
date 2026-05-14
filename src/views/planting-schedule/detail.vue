@@ -131,11 +131,10 @@
             <thead>
               <tr class="border-b bg-muted/20">
                 <th class="px-4 py-2 text-left font-medium whitespace-nowrap">序号</th>
-                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块编号</th>
-                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块名称</th>
-                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块类型</th>
-                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">地块面积(亩)</th>
-                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">所属园区/农场</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">种植单元编号</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">种植单元名称</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">土地类型</th>
+                <th class="px-4 py-2 text-left font-medium whitespace-nowrap">种植单元面积(亩)</th>
               </tr>
             </thead>
             <tbody>
@@ -145,14 +144,13 @@
                 <td class="px-4 py-2">{{ r.name }}</td>
                 <td class="px-4 py-2">{{ r.type }}</td>
                 <td class="px-4 py-2">{{ r.area }}</td>
-                <td class="px-4 py-2">{{ r.belong }}</td>
                
               </tr>
             </tbody>
           </table>
         </div>
         <div class="border-t bg-muted/10 px-4 py-2 text-sm text-muted-foreground">
-          共 {{ resourceList.length }} 个地块，资产面积合计：{{ planInfo.assetArea }} 亩
+          共 {{ resourceList.length }} 个种植单元，资产面积合计：{{ planInfo.assetArea }} 亩
         </div>
       </div>
 
@@ -433,7 +431,8 @@
       <!-- 分页 + 批量操作 -->
       <div class="flex items-center justify-between px-4 py-3 border rounded-b-lg bg-background">
         <div class="flex items-center gap-3">
-          <span class="text-sm text-muted-foreground">共 {{ taskList.length }} 条</span>
+          <span class="text-sm text-muted-foreground">
+            第 {{ taskCurrentPage }} / {{ taskTotalPages }} 页，共<span class="font-medium"> {{ taskList.length }} </span> 条记录</span>
           <span v-if="selectedTaskCodes.size > 0" class="text-sm text-primary font-medium">
             已选 {{ selectedTaskCodes.size }} 条
           </span>
