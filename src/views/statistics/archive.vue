@@ -3,7 +3,7 @@
     <!-- 页面标题 -->
     <div>
       <h1 class="text-2xl font-bold tracking-tight">种植档案</h1>
-      <p class="mt-1 text-sm text-muted-foreground">以地块为维度，查看<span class="font-semibold">当前种植数据</span>及执行进度</p>
+      <p class="mt-1 text-sm text-muted-foreground">以种植单元为维度，查看<span class="font-semibold">当前种植数据</span>及执行进度</p>
     </div>
 
     <!-- 查询条件 -->

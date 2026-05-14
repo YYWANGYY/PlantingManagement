@@ -183,14 +183,14 @@
         <div>
           <label class="mb-1.5 block text-sm font-medium">
             种植资源信息 <span class="text-red-500">*</span>
-            <span class="ml-2 text-xs text-muted-foreground font-normal">选择种植单元（地块）</span>
+            <span class="ml-2 text-xs text-muted-foreground font-normal">选择种植单元</span>
           </label>
           <div class="flex items-center gap-2">
             <input
               :value="selectedPlotNames"
               type="text"
               readonly
-              placeholder="请选择种植单元（地块）"
+              placeholder="请选择种植单元"
               class="h-9 flex-1 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm cursor-not-allowed"
             />
             <button

@@ -27,14 +27,14 @@
       <!-- 查询条件 -->
       <div class="flex flex-wrap items-end gap-3 rounded-xl border bg-card p-4 shadow-sm">
         <div class="space-y-1">
-          <label class="text-xs font-medium text-muted-foreground">所属单位</label>
+          <label class="text-xs font-medium text-muted-foreground">所属单位 </label>
           <select v-model="planFilters.org" class="h-9 w-44 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
             <option value="">全部</option>
             <option v-for="org in orgOptions" :key="org.value" :value="org.value">{{ org.label }}</option>
           </select>
         </div>
         <div class="space-y-1">
-          <label class="text-xs font-medium text-muted-foreground">日期</label>
+          <label class="text-xs font-medium text-muted-foreground">日期 </label>
           <input
             v-model="planFilters.date"
             type="date"
@@ -197,7 +197,7 @@
                   <span class="text-xs text-muted-foreground">种植资源信息</span>
                   <div class="mt-1 overflow-x-auto rounded-lg border">
                     <table class="w-full text-sm">
-                      <thead><tr class="border-b bg-muted/50"><th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">地块编号</th><th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">规划单元编号</th><th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">种植面积(亩)</th></tr></thead>
+                      <thead><tr class="border-b bg-muted/50"><th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">种植单元编号</th><th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">种植单元名称</th><th class="px-3 py-2 text-left text-xs font-medium text-muted-foreground">种植面积(亩)</th></tr></thead>
                       <tbody>
                         <tr v-for="(res, i) in selectedPlan.resources" :key="i" class="border-b last:border-0">
                           <td class="px-3 py-2">{{ res.plotCode }}</td>
@@ -384,24 +384,42 @@
         <button class="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90" @click="resetTaskFilters">重置</button>
       </div>
 
-      <!-- 任务卡片列表 -->
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <!-- 任务列表（一行一条，左图右文） -->
+      <div class="space-y-3">
         <div
-          v-for="task in filteredTasks"
+          v-for="task in paginatedTasks"
           :key="task.id"
-          class="relative rounded-xl border bg-card shadow-sm overflow-hidden"
+          class="relative flex rounded-xl border bg-card shadow-sm overflow-hidden hover:shadow-md transition-shadow"
         >
-          <!-- 状态角标 -->
-          <div :class="['absolute right-3 top-3 rounded-full px-2 py-0.5 text-xs font-medium', taskStatusBadgeClass(task.taskStatus)]">
-            {{ taskStatusLabel(task.taskStatus) }}
-          </div>
-          <!-- 左侧色条 -->
-          <div :class="['absolute left-0 top-0 bottom-0 w-1', taskStatusBarClass(task.taskStatus)]" />
-          <div class="p-5 pl-4">
-            <div class="flex items-start gap-2 mb-3 pr-16">
-              <h4 class="text-sm font-semibold leading-snug">{{ task.step }}</h4>
+          <!-- 左侧：大田工作图片 -->
+          <div class="w-52 flex-shrink-0 bg-muted/30">
+            <img
+              v-if="task.imageUrl"
+              :src="task.imageUrl"
+              :alt="task.step"
+              class="h-full w-full object-cover"
+            />
+            <div v-else class="flex h-full items-center justify-center">
+              <div class="text-center">
+                <ImageIcon class="mx-auto h-8 w-8 text-muted-foreground/40" />
+                <p class="mt-1 text-xs text-muted-foreground/60">暂无图片</p>
+              </div>
             </div>
-            <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+          </div>
+          <!-- 右侧：文字内容 -->
+          <div class="flex-1 p-5 pl-6">
+            <!-- 标题行：作业环节 + 状态角标 -->
+            <div class="flex items-center justify-between mb-3">
+              <div class="flex items-center gap-3">
+                <h4 class="text-sm font-semibold">{{ task.step }}</h4>
+                <span class="text-xs text-muted-foreground">{{ task.growthStage }} · {{ task.process }}</span>
+              </div>
+              <span :class="['inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium', taskStatusBadgeClass(task.taskStatus)]">
+                {{ taskStatusLabel(task.taskStatus) }}
+              </span>
+            </div>
+            <!-- 信息网格 -->
+            <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-xs lg:grid-cols-4">
               <div>
                 <span class="text-muted-foreground">作业面积</span>
                 <p class="font-medium">{{ task.area }}亩</p>
@@ -418,7 +436,7 @@
                 <span class="text-muted-foreground">实际完成时间</span>
                 <p class="font-medium">{{ task.actualEndTime || '-' }}</p>
               </div>
-              <div class="col-span-2">
+              <div>
                 <span class="text-muted-foreground">地块</span>
                 <p class="font-medium">{{ task.plotName }}（{{ task.plotCode }}）</p>
               </div>
@@ -426,18 +444,52 @@
                 <span class="text-muted-foreground">农机/设备</span>
                 <p class="font-medium">{{ task.equipment || '-' }}</p>
               </div>
-            </div>
-            <!-- 附属图片 -->
-            <div v-if="task.imageUrl" class="mt-3">
-              <div class="overflow-hidden rounded-lg border bg-muted/30">
-                <img :src="task.imageUrl" :alt="task.step" class="h-32 w-full object-cover" />
+              <div>
+                <span class="text-muted-foreground">计划日期</span>
+                <p class="font-medium">{{ task.planDate }}</p>
               </div>
-              <p class="mt-1 text-xs text-muted-foreground">农事作业上报图片</p>
             </div>
-            <div v-else class="mt-3 flex h-20 items-center justify-center rounded-lg border border-dashed bg-muted/20">
-              <span class="text-xs text-muted-foreground">暂无作业图片</span>
+            <!-- 大田工作图片标注 -->
+            <div v-if="task.imageUrl" class="mt-2 text-xs text-muted-foreground/60">
+              大田工作图片
             </div>
           </div>
+          <!-- 左侧色条 -->
+          <div :class="['absolute left-0 top-0 bottom-0 w-1', taskStatusBarClass(task.taskStatus)]" />
+        </div>
+      </div>
+
+      <!-- 分页 -->
+      <div v-if="filteredTasks.length > 0" class="flex items-center justify-between px-1">
+        <p class="text-sm text-muted-foreground">
+          第 {{ taskCurrentPage }} / {{ taskTotalPages }} 页，共 <span class="font-medium">{{ filteredTasks.length }}</span> 条记录
+        </p>
+        <div class="flex items-center gap-1">
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="taskCurrentPage === 1"
+            @click="taskCurrentPage--"
+          >
+            <ChevronLeft class="h-4 w-4" />
+          </button>
+          <template v-for="p in taskVisiblePages" :key="p">
+            <button
+              v-if="p !== '...'"
+              class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm transition-colors"
+              :class="p === taskCurrentPage ? 'border-primary bg-primary text-primary-foreground' : 'border-input hover:bg-muted'"
+              @click="taskCurrentPage = p as number"
+            >
+              {{ p }}
+            </button>
+            <span v-else class="px-1 text-muted-foreground">...</span>
+          </template>
+          <button
+            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-input text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+            :disabled="taskCurrentPage === taskTotalPages"
+            @click="taskCurrentPage++"
+          >
+            <ChevronRight class="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -451,7 +503,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   CalendarDays,
   LayoutGrid,
@@ -459,7 +511,8 @@ import {
   ChevronRight,
   ChevronDown,
   X,
-  ClipboardList
+  ClipboardList,
+  Image as ImageIcon
 } from 'lucide-vue-next'
 
 // ==================== 通用类型 ====================
@@ -614,7 +667,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P001', planCode: 'ZJ-2025-001', schemeCode: 'FA-2025-001', planName: '五大连池玉米种植计划', org: '五大连池农场',
     cropCategory: '玉米', cropVariety: '先玉335',
-    resources: [{ plotCode: 'WDLC-A01', unitCode: 'GH-A01', area: 2500 }, { plotCode: 'WDLC-A02', unitCode: 'GH-A02', area: 2500 }],
+    resources: [{ plotCode: 'WDLC-A01', unitCode: '种植单元A01-001', area: 2500 }, { plotCode: 'WDLC-A02', unitCode: '种植单元A02-002', area: 2500 }],
     assetArea: 5000, planArea: 5000, startDate: '2025-04-20', endDate: '2025-10-15',
     planManager: '张建国', execManager: '李明远', creator: '系统管理员', createTime: '2025-03-01 09:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -632,7 +685,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P002', planCode: 'ZJ-2025-002', schemeCode: 'FA-2025-002', planName: '五大连池大豆种植计划', org: '五大连池农场',
     cropCategory: '大豆', cropVariety: '黑河43',
-    resources: [{ plotCode: 'WDLC-B01', unitCode: 'GH-B01', area: 3000 }, { plotCode: 'WDLC-B02', unitCode: 'GH-B02', area: 2000 }],
+    resources: [{ plotCode: 'WDLC-B01', unitCode: '种植单元B01-001', area: 3000 }, { plotCode: 'WDLC-B02', unitCode: '种植单元B02-001', area: 2000 }],
     assetArea: 5000, planArea: 5000, startDate: '2025-05-01', endDate: '2025-09-30',
     planManager: '赵志强', execManager: '孙伟', creator: '系统管理员', createTime: '2025-03-05 10:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -648,7 +701,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P003', planCode: 'ZJ-2025-003', schemeCode: 'FA-2025-003', planName: '双城水稻种植计划', org: '双城农场',
     cropCategory: '水稻', cropVariety: '龙粳31',
-    resources: [{ plotCode: 'SC-C01', unitCode: 'GH-C01', area: 4000 }],
+    resources: [{ plotCode: 'SC-C01', unitCode: '种植单元C01-001', area: 4000 }],
     assetArea: 4000, planArea: 4000, startDate: '2025-04-10', endDate: '2025-10-20',
     planManager: '刘海涛', execManager: '陈刚', creator: '系统管理员', createTime: '2025-03-10 11:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -664,7 +717,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P004', planCode: 'ZJ-2025-004', schemeCode: 'FA-2025-004', planName: '法库花生种植计划', org: '法库农场',
     cropCategory: '花生', cropVariety: '花育33',
-    resources: [{ plotCode: 'FK-D01', unitCode: 'GH-D01', area: 2000 }],
+    resources: [{ plotCode: 'FK-D01', unitCode: '种植单元D01-001', area: 2000 }],
     assetArea: 2000, planArea: 2000, startDate: '2025-05-10', endDate: '2025-09-25',
     planManager: '王永亮', execManager: '周鹏', creator: '系统管理员', createTime: '2025-04-01 09:00',
     approver: '', approvalStatus: '未审批', remark: '待审批',
@@ -677,7 +730,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P005', planCode: 'ZJ-2025-005', schemeCode: 'FA-2025-005', planName: '双城马铃薯种植计划', org: '双城农场',
     cropCategory: '马铃薯', cropVariety: '大西洋',
-    resources: [{ plotCode: 'SC-E01', unitCode: 'GH-E01', area: 1500 }],
+    resources: [{ plotCode: 'SC-E01', unitCode: '种植单元E01-001', area: 1500 }],
     assetArea: 1500, planArea: 1500, startDate: '2025-04-15', endDate: '2025-08-30',
     planManager: '马强', execManager: '于涛', creator: '系统管理员', createTime: '2025-03-15 14:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -690,7 +743,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P006', planCode: 'ZJ-2025-006', schemeCode: 'FA-2025-006', planName: '五大连池小麦种植计划', org: '五大连池农场',
     cropCategory: '小麦', cropVariety: '龙麦35',
-    resources: [{ plotCode: 'WDLC-F01', unitCode: 'GH-F01', area: 3000 }],
+    resources: [{ plotCode: 'WDLC-F01', unitCode: '种植单元F01-001', area: 3000 }],
     assetArea: 3000, planArea: 3000, startDate: '2025-03-20', endDate: '2025-08-10',
     planManager: '钱明', execManager: '吴磊', creator: '系统管理员', createTime: '2025-02-20 10:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -701,7 +754,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P007', planCode: 'ZJ-2025-007', schemeCode: 'FA-2025-007', planName: '法库大豆种植计划', org: '法库农场',
     cropCategory: '大豆', cropVariety: '辽豆15',
-    resources: [{ plotCode: 'FK-G01', unitCode: 'GH-G01', area: 3500 }],
+    resources: [{ plotCode: 'FK-G01', unitCode: '种植单元G01-001', area: 3500 }],
     assetArea: 3500, planArea: 3500, startDate: '2025-05-05', endDate: '2025-10-05',
     planManager: '郑伟', execManager: '黄海', creator: '系统管理员', createTime: '2025-04-05 11:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -714,7 +767,7 @@ const allPlans: FarmPlan[] = [
   {
     id: 'P008', planCode: 'ZJ-2025-008', schemeCode: 'FA-2025-008', planName: '双城玉米种植计划', org: '双城农场',
     cropCategory: '玉米', cropVariety: '郑单958',
-    resources: [{ plotCode: 'SC-H01', unitCode: 'GH-H01', area: 4500 }],
+    resources: [{ plotCode: 'SC-H01', unitCode: '种植单元H01-001', area: 4500 }],
     assetArea: 4500, planArea: 4500, startDate: '2025-04-25', endDate: '2025-10-20',
     planManager: '冯磊', execManager: '蒋华', creator: '系统管理员', createTime: '2025-03-20 09:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
@@ -859,6 +912,7 @@ function toggleStep(step: string) {
 
 function resetTaskFilters() {
   taskFilters.value = { growthStages: [], processes: [], steps: [], startDate: '', endDate: '' }
+  taskCurrentPage.value = 1
 }
 
 // 任务状态配置
@@ -917,4 +971,35 @@ const filteredTasks = computed(() => {
     return true
   })
 })
+
+// 任务看板分页
+const taskCurrentPage = ref(1)
+const taskPageSize = 8
+
+const taskTotalPages = computed(() => Math.max(1, Math.ceil(filteredTasks.value.length / taskPageSize)))
+
+const paginatedTasks = computed(() => {
+  const start = (taskCurrentPage.value - 1) * taskPageSize
+  return filteredTasks.value.slice(start, start + taskPageSize)
+})
+
+const taskVisiblePages = computed(() => {
+  const total = taskTotalPages.value
+  const current = taskCurrentPage.value
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+  if (current <= 3) {
+    return [1, 2, 3, 4, '...', total]
+  }
+  if (current >= total - 2) {
+    return [1, '...', total - 3, total - 2, total - 1, total]
+  }
+  return [1, '...', current - 1, current, current + 1, '...', total]
+})
+
+// 查询条件变化时重置页码
+watch([() => taskFilters.value.growthStages, () => taskFilters.value.processes, () => taskFilters.value.steps, () => taskFilters.value.startDate, () => taskFilters.value.endDate], () => {
+  taskCurrentPage.value = 1
+}, { deep: true })
 </script>
