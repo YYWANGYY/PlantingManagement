@@ -196,7 +196,6 @@ const menuItems: MenuItem[] = [
   {
     title: '农资需求', icon: Package,
     children: [
-      { title: '需求计划', href: '/material-demand', icon: ClipboardList },
       { title: '需求汇总', href: '/material-demand/summary', icon: ChartPie },
     ],
   },

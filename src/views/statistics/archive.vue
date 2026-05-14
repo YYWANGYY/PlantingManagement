@@ -9,6 +9,18 @@
     <!-- 查询条件 -->
     <div class="rounded-lg border bg-card p-4 shadow-sm">
       <div class="flex flex-wrap items-end gap-4">
+        <!-- 年度 -->
+        <div class="flex flex-col gap-1.5">
+          <label class="text-sm font-medium text-muted-foreground">年度</label>
+          <select
+            v-model="filters.year"
+            class="h-9 w-36 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="">全部</option>
+            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
+          </select>
+        </div>
+
         <!-- 所属单位 -->
         <div class="flex flex-col gap-1.5">
           <label class="text-sm font-medium text-muted-foreground">所属单位</label>
@@ -64,28 +76,27 @@
           </div>
         </div>
 
-        <!-- 种植作物 -->
+        <!-- 作物大类 + 作物品种 -->
         <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-muted-foreground">种植作物</label>
-          <select
-            v-model="filters.crop"
-            class="h-9 w-36 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">全部</option>
-            <option v-for="cat in cropCategories" :key="cat.name" :value="cat.name">{{ cat.name }}</option>
-          </select>
-        </div>
-
-        <!-- 作物品种 -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-muted-foreground">作物品种</label>
-          <select
-            v-model="filters.variety"
-            class="h-9 w-40 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">全部</option>
-            <option v-for="v in filteredVarieties" :key="v" :value="v">{{ v }}</option>
-          </select>
+          <label class="text-sm font-medium text-muted-foreground">作物大类 / 品种</label>
+          <div class="flex gap-1">
+            <select
+              v-model="filters.cropCategory"
+              class="h-9 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              @change="filters.cropVariety = ''"
+            >
+              <option value="">全部大类</option>
+              <option v-for="c in cropCategories" :key="c" :value="c">{{ c }}</option>
+            </select>
+            <select
+              v-model="filters.cropVariety"
+              class="h-9 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+              :disabled="!filters.cropCategory"
+            >
+              <option value="">全部品种</option>
+              <option v-for="v in cropVarietyOptions" :key="v" :value="v">{{ v }}</option>
+            </select>
+          </div>
         </div>
 
         <!-- 种植计划 -->
@@ -281,18 +292,20 @@ import {
 // ===== 查询条件 =====
 
 interface Filters {
+  year: string
   org: string
-  crop: string
-  variety: string
+  cropCategory: string
+  cropVariety: string
   planId: string
   startDate: string
   endDate: string
 }
 
 const filters = ref<Filters>({
+  year: '',
   org: '',
-  crop: '',
-  variety: '',
+  cropCategory: '',
+  cropVariety: '',
   planId: '',
   startDate: '',
   endDate: ''
@@ -301,24 +314,47 @@ const filters = ref<Filters>({
 const showOrgTree = ref(false)
 const expandedOrgs = ref<string[]>([])
 
+const yearOptions = [2025, 2024, 2023, 2022]
+
 const orgTree = [
   { label: '哈尔滨区域公司', children: ['五大连池农场', '双城农场'] },
   { label: '沈阳区域公司', children: ['法库农场', '新民农场'] }
 ]
 
-const cropCategories = [
-  { name: '玉米', varieties: ['先玉335', '郑单958', '京科968'] },
-  { name: '大豆', varieties: ['黑河43', '中黄13', '合丰50'] },
-  { name: '水稻', varieties: ['龙粳31', '五优稻4号', '松粳22'] },
-  { name: '小麦', varieties: ['龙麦35', '克春4号'] },
-  { name: '马铃薯', varieties: ['大西洋', '费乌瑞它'] },
-  { name: '花生', varieties: ['花育33', '白沙1016'] }
-]
+// ==================== 作物数据 ====================
+// 数据来源：基础管理→作物管理
+const cropMajors = [
+  { name: '水稻', code: 'rice', plantingMode: 'field' },
+  { name: '小麦', code: 'wheat', plantingMode: 'field' },
+  { name: '玉米', code: 'corn', plantingMode: 'field' },
+  { name: '大豆', code: 'soybean', plantingMode: 'field' }
+] as const
 
-const filteredVarieties = computed(() => {
-  if (!filters.value.crop) return cropCategories.flatMap(c => c.varieties)
-  const cat = cropCategories.find(c => c.name === filters.value.crop)
-  return cat ? cat.varieties : []
+const cropVarieties = [
+  // 水稻
+  { name: '籼稻', code: 'indica_rice', majorCode: 'rice', majorName: '水稻' },
+  { name: '粳稻', code: 'japonica_rice', majorCode: 'rice', majorName: '水稻' },
+  { name: '糯稻', code: 'glutinous_rice', majorCode: 'rice', majorName: '水稻' },
+  { name: '杂交稻', code: 'hybrid_rice', majorCode: 'rice', majorName: '水稻' },
+  // 小麦
+  { name: '强筋小麦', code: 'strong_gluten_wheat', majorCode: 'wheat', majorName: '小麦' },
+  { name: '中筋小麦', code: 'medium_gluten_wheat', majorCode: 'wheat', majorName: '小麦' },
+  { name: '弱筋小麦', code: 'weak_gluten_wheat', majorCode: 'wheat', majorName: '小麦' },
+  // 玉米
+  { name: '甜玉米', code: 'sweet_corn', majorCode: 'corn', majorName: '玉米' },
+  { name: '糯玉米', code: 'waxy_corn', majorCode: 'corn', majorName: '玉米' },
+  // 大豆
+  { name: '高蛋白大豆', code: 'high_protein_soybean', majorCode: 'soybean', majorName: '大豆' },
+  { name: '高油大豆', code: 'high_oil_soybean', majorCode: 'soybean', majorName: '大豆' }
+] as const
+
+const cropCategories = cropMajors.map(m => m.name)
+
+const cropVarietyOptions = computed(() => {
+  if (!filters.value.cropCategory) return []
+  const major = cropMajors.find(m => m.name === filters.value.cropCategory)
+  if (!major) return []
+  return cropVarieties.filter(v => v.majorCode === major.code).map(v => v.name)
 })
 
 const planOptions = [
@@ -356,7 +392,7 @@ function handleSearch() {
 }
 
 function handleReset() {
-  filters.value = { org: '', crop: '', variety: '', planId: '', startDate: '', endDate: '' }
+  filters.value = { year: '', org: '', cropCategory: '', cropVariety: '', planId: '', startDate: '', endDate: '' }
   currentPage.value = 1
 }
 
@@ -367,6 +403,7 @@ interface ArchiveItem {
   plotName: string
   orgName: string
   planCode: string
+  year: number
   cropCategory: string
   cropVariety: string
   area: number
@@ -383,28 +420,32 @@ interface ArchiveItem {
 
 // 模拟数据 - 以地块为维度，当前种植数据
 const allData: ArchiveItem[] = [
-  { plotCode: 'WDC-LQ-A01', plotName: '龙泉分场A01', orgName: '五大连池农场', planCode: 'ZJ2025-001', cropCategory: '玉米', cropVariety: '先玉335', area: 5000, executor: 'machine', status: '执行中', progress: 65, completedTasks: 8, totalTasks: 12, currentDay: 78, growthStage: '拔节期', startDate: '2025-04-20', endDate: '2025-09-30' },
-  { plotCode: 'WDC-LQ-A02', plotName: '龙泉分场A02', orgName: '五大连池农场', planCode: 'ZJ2025-002', cropCategory: '大豆', cropVariety: '黑河43', area: 5000, executor: 'manual', status: '执行中', progress: 52, completedTasks: 6, totalTasks: 11, currentDay: 62, growthStage: '开花期', startDate: '2025-05-01', endDate: '2025-09-25' },
-  { plotCode: 'WDC-LQ-B01', plotName: '龙泉分场B01', orgName: '五大连池农场', planCode: 'ZJ2025-001', cropCategory: '玉米', cropVariety: '郑单958', area: 3200, executor: 'machine', status: '执行中', progress: 48, completedTasks: 5, totalTasks: 12, currentDay: 55, growthStage: '苗期', startDate: '2025-04-25', endDate: '2025-10-05' },
-  { plotCode: 'WDC-LQ-B02', plotName: '龙泉分场B02', orgName: '五大连池农场', planCode: 'ZJ2025-006', cropCategory: '花生', cropVariety: '花育33', area: 1800, executor: 'manual', status: '执行中', progress: 35, completedTasks: 3, totalTasks: 9, currentDay: 40, growthStage: '苗期', startDate: '2025-05-10', endDate: '2025-09-20' },
-  { plotCode: 'SC-SC-C01', plotName: '双城农场C01', orgName: '双城农场', planCode: 'ZJ2025-003', cropCategory: '水稻', cropVariety: '龙粳31', area: 6000, executor: 'facility', status: '执行中', progress: 72, completedTasks: 8, totalTasks: 11, currentDay: 85, growthStage: '抽穗期', startDate: '2025-04-15', endDate: '2025-09-20' },
-  { plotCode: 'SC-SC-C02', plotName: '双城农场C02', orgName: '双城农场', planCode: 'ZJ2025-003', cropCategory: '水稻', cropVariety: '五优稻4号', area: 4500, executor: 'facility', status: '执行中', progress: 58, completedTasks: 7, totalTasks: 12, currentDay: 68, growthStage: '分蘖期', startDate: '2025-04-18', endDate: '2025-09-25' },
-  { plotCode: 'SC-SC-D01', plotName: '双城农场D01', orgName: '双城农场', planCode: 'ZJ2025-001', cropCategory: '玉米', cropVariety: '京科968', area: 2800, executor: 'machine', status: '执行中', progress: 42, completedTasks: 5, totalTasks: 12, currentDay: 50, growthStage: '苗期', startDate: '2025-05-01', endDate: '2025-10-10' },
-  { plotCode: 'FK-FK-E01', plotName: '法库农场E01', orgName: '法库农场', planCode: 'ZJ2025-004', cropCategory: '小麦', cropVariety: '龙麦35', area: 4000, executor: 'machine', status: '执行中', progress: 88, completedTasks: 7, totalTasks: 8, currentDay: 95, growthStage: '灌浆期', startDate: '2025-03-10', endDate: '2025-07-15' },
-  { plotCode: 'FK-FK-E02', plotName: '法库农场E02', orgName: '法库农场', planCode: 'ZJ2025-004', cropCategory: '小麦', cropVariety: '克春4号', area: 3500, executor: 'machine', status: '执行中', progress: 82, completedTasks: 6, totalTasks: 8, currentDay: 90, growthStage: '成熟期', startDate: '2025-03-15', endDate: '2025-07-20' },
-  { plotCode: 'XM-XM-F01', plotName: '新民农场F01', orgName: '新民农场', planCode: 'ZJ2025-005', cropCategory: '马铃薯', cropVariety: '大西洋', area: 2500, executor: 'manual', status: '执行中', progress: 55, completedTasks: 5, totalTasks: 9, currentDay: 60, growthStage: '块茎膨大期', startDate: '2025-04-20', endDate: '2025-09-01' },
-  { plotCode: 'XM-XM-F02', plotName: '新民农场F02', orgName: '新民农场', planCode: 'ZJ2025-002', cropCategory: '大豆', cropVariety: '中黄13', area: 3800, executor: 'manual', status: '执行中', progress: 38, completedTasks: 4, totalTasks: 11, currentDay: 45, growthStage: '苗期', startDate: '2025-05-05', endDate: '2025-09-30' },
-  { plotCode: 'XM-XM-F03', plotName: '新民农场F03', orgName: '新民农场', planCode: 'ZJ2025-005', cropCategory: '马铃薯', cropVariety: '费乌瑞它', area: 2000, executor: 'facility', status: '执行中', progress: 62, completedTasks: 6, totalTasks: 9, currentDay: 70, growthStage: '块茎形成期', startDate: '2025-04-15', endDate: '2025-08-25' },
-  { plotCode: 'WDC-LQ-C01', plotName: '龙泉分场C01', orgName: '五大连池农场', planCode: 'ZJ2025-002', cropCategory: '大豆', cropVariety: '合丰50', area: 2600, executor: 'manual', status: '执行中', progress: 45, completedTasks: 5, totalTasks: 11, currentDay: 53, growthStage: '分枝期', startDate: '2025-05-08', endDate: '2025-10-01' },
-  { plotCode: 'SC-SC-E01', plotName: '双城农场E01', orgName: '双城农场', planCode: 'ZJ2025-001', cropCategory: '玉米', cropVariety: '先玉335', area: 5500, executor: 'machine', status: '执行中', progress: 70, completedTasks: 8, totalTasks: 12, currentDay: 82, growthStage: '抽雄期', startDate: '2025-04-22', endDate: '2025-09-28' },
-  { plotCode: 'FK-FK-F01', plotName: '法库农场F01', orgName: '法库农场', planCode: 'ZJ2025-002', cropCategory: '大豆', cropVariety: '黑河43', area: 3000, executor: 'manual', status: '执行中', progress: 30, completedTasks: 3, totalTasks: 11, currentDay: 35, growthStage: '苗期', startDate: '2025-05-15', endDate: '2025-10-05' },
-  { plotCode: 'XM-XM-G01', plotName: '新民农场G01', orgName: '新民农场', planCode: 'ZJ2025-006', cropCategory: '花生', cropVariety: '白沙1016', area: 1500, executor: 'manual', status: '执行中', progress: 25, completedTasks: 2, totalTasks: 9, currentDay: 30, growthStage: '苗期', startDate: '2025-05-20', endDate: '2025-09-15' },
+  { plotCode: 'WDC-LQ-A01', plotName: '龙泉分场A01', orgName: '五大连池农场', planCode: 'ZJ2025-001', year: 2025, cropCategory: '玉米', cropVariety: '先玉335', area: 5000, executor: 'machine', status: '执行中', progress: 65, completedTasks: 8, totalTasks: 12, currentDay: 78, growthStage: '拔节期', startDate: '2025-04-20', endDate: '2025-09-30' },
+  { plotCode: 'WDC-LQ-A02', plotName: '龙泉分场A02', orgName: '五大连池农场', planCode: 'ZJ2025-002', year: 2025, cropCategory: '大豆', cropVariety: '黑河43', area: 5000, executor: 'manual', status: '执行中', progress: 52, completedTasks: 6, totalTasks: 11, currentDay: 62, growthStage: '开花期', startDate: '2025-05-01', endDate: '2025-09-25' },
+  { plotCode: 'WDC-LQ-B01', plotName: '龙泉分场B01', orgName: '五大连池农场', planCode: 'ZJ2025-001', year: 2025, cropCategory: '玉米', cropVariety: '郑单958', area: 3200, executor: 'machine', status: '执行中', progress: 48, completedTasks: 5, totalTasks: 12, currentDay: 55, growthStage: '苗期', startDate: '2025-04-25', endDate: '2025-10-05' },
+  { plotCode: 'WDC-LQ-B02', plotName: '龙泉分场B02', orgName: '五大连池农场', planCode: 'ZJ2025-006', year: 2025, cropCategory: '花生', cropVariety: '花育33', area: 1800, executor: 'manual', status: '执行中', progress: 35, completedTasks: 3, totalTasks: 9, currentDay: 40, growthStage: '苗期', startDate: '2025-05-10', endDate: '2025-09-20' },
+  { plotCode: 'SC-SC-C01', plotName: '双城农场C01', orgName: '双城农场', planCode: 'ZJ2025-003', year: 2025, cropCategory: '水稻', cropVariety: '龙粳31', area: 6000, executor: 'facility', status: '执行中', progress: 72, completedTasks: 8, totalTasks: 11, currentDay: 85, growthStage: '抽穗期', startDate: '2025-04-15', endDate: '2025-09-20' },
+  { plotCode: 'SC-SC-C02', plotName: '双城农场C02', orgName: '双城农场', planCode: 'ZJ2025-003', year: 2025, cropCategory: '水稻', cropVariety: '五优稻4号', area: 4500, executor: 'facility', status: '执行中', progress: 58, completedTasks: 7, totalTasks: 12, currentDay: 68, growthStage: '分蘖期', startDate: '2025-04-18', endDate: '2025-09-25' },
+  { plotCode: 'SC-SC-D01', plotName: '双城农场D01', orgName: '双城农场', planCode: 'ZJ2025-001', year: 2025, cropCategory: '玉米', cropVariety: '京科968', area: 2800, executor: 'machine', status: '执行中', progress: 42, completedTasks: 5, totalTasks: 12, currentDay: 50, growthStage: '苗期', startDate: '2025-05-01', endDate: '2025-10-10' },
+  { plotCode: 'FK-FK-E01', plotName: '法库农场E01', orgName: '法库农场', planCode: 'ZJ2025-004', year: 2025, cropCategory: '小麦', cropVariety: '龙麦35', area: 4000, executor: 'machine', status: '执行中', progress: 88, completedTasks: 7, totalTasks: 8, currentDay: 95, growthStage: '灌浆期', startDate: '2025-03-10', endDate: '2025-07-15' },
+  { plotCode: 'FK-FK-E02', plotName: '法库农场E02', orgName: '法库农场', planCode: 'ZJ2025-004', year: 2025, cropCategory: '小麦', cropVariety: '克春4号', area: 3500, executor: 'machine', status: '执行中', progress: 82, completedTasks: 6, totalTasks: 8, currentDay: 90, growthStage: '成熟期', startDate: '2025-03-15', endDate: '2025-07-20' },
+  { plotCode: 'XM-XM-F01', plotName: '新民农场F01', orgName: '新民农场', planCode: 'ZJ2025-005', year: 2025, cropCategory: '马铃薯', cropVariety: '大西洋', area: 2500, executor: 'manual', status: '执行中', progress: 55, completedTasks: 5, totalTasks: 9, currentDay: 60, growthStage: '块茎膨大期', startDate: '2025-04-20', endDate: '2025-09-01' },
+  { plotCode: 'XM-XM-F02', plotName: '新民农场F02', orgName: '新民农场', planCode: 'ZJ2025-002', year: 2025, cropCategory: '大豆', cropVariety: '中黄13', area: 3800, executor: 'manual', status: '执行中', progress: 38, completedTasks: 4, totalTasks: 11, currentDay: 45, growthStage: '苗期', startDate: '2025-05-05', endDate: '2025-09-30' },
+  { plotCode: 'XM-XM-F03', plotName: '新民农场F03', orgName: '新民农场', planCode: 'ZJ2025-005', year: 2025, cropCategory: '马铃薯', cropVariety: '费乌瑞它', area: 2000, executor: 'facility', status: '执行中', progress: 62, completedTasks: 6, totalTasks: 9, currentDay: 70, growthStage: '块茎形成期', startDate: '2025-04-15', endDate: '2025-08-25' },
+  { plotCode: 'WDC-LQ-C01', plotName: '龙泉分场C01', orgName: '五大连池农场', planCode: 'ZJ2025-002', year: 2025, cropCategory: '大豆', cropVariety: '合丰50', area: 2600, executor: 'manual', status: '执行中', progress: 45, completedTasks: 5, totalTasks: 11, currentDay: 53, growthStage: '分枝期', startDate: '2025-05-08', endDate: '2025-10-01' },
+  { plotCode: 'SC-SC-E01', plotName: '双城农场E01', orgName: '双城农场', planCode: 'ZJ2025-001', year: 2025, cropCategory: '玉米', cropVariety: '先玉335', area: 5500, executor: 'machine', status: '执行中', progress: 70, completedTasks: 8, totalTasks: 12, currentDay: 82, growthStage: '抽雄期', startDate: '2025-04-22', endDate: '2025-09-28' },
+  { plotCode: 'FK-FK-F01', plotName: '法库农场F01', orgName: '法库农场', planCode: 'ZJ2025-002', year: 2025, cropCategory: '大豆', cropVariety: '黑河43', area: 3000, executor: 'manual', status: '执行中', progress: 30, completedTasks: 3, totalTasks: 11, currentDay: 35, growthStage: '苗期', startDate: '2025-05-15', endDate: '2025-10-05' },
+  { plotCode: 'XM-XM-G01', plotName: '新民农场G01', orgName: '新民农场', planCode: 'ZJ2025-006', year: 2025, cropCategory: '花生', cropVariety: '白沙1016', area: 1500, executor: 'manual', status: '执行中', progress: 25, completedTasks: 2, totalTasks: 9, currentDay: 30, growthStage: '苗期', startDate: '2025-05-20', endDate: '2025-09-15' },
 ]
 
 // ===== 过滤逻辑 =====
 
 const filteredData = computed(() => {
   let data = allData
+
+  if (filters.value.year) {
+    data = data.filter(item => item.year === Number(filters.value.year))
+  }
 
   if (filters.value.org) {
     data = data.filter(item => {
@@ -418,12 +459,12 @@ const filteredData = computed(() => {
     })
   }
 
-  if (filters.value.crop) {
-    data = data.filter(item => item.cropCategory === filters.value.crop)
+  if (filters.value.cropCategory) {
+    data = data.filter(item => item.cropCategory === filters.value.cropCategory)
   }
 
-  if (filters.value.variety) {
-    data = data.filter(item => item.cropVariety === filters.value.variety)
+  if (filters.value.cropVariety) {
+    data = data.filter(item => item.cropVariety === filters.value.cropVariety)
   }
 
   if (filters.value.planId) {

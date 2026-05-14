@@ -15,57 +15,7 @@
       </button>
     </div>
 
-    <!-- 统计卡片 -->
-    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <!-- 统计-权限总数 -->
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-green-100">
-            <Lock class="h-5 w-5 text-green-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">权限总数</p>
-            <p class="text-2xl font-bold">{{ permissions.length }}</p>
-          </div>
-        </div>
-      </div>
-      <!-- 统计-功能模块 -->
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-blue-100">
-            <Shield class="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">功能模块</p>
-            <p class="text-2xl font-bold">{{ moduleCount }}</p>
-          </div>
-        </div>
-      </div>
-      <!-- 统计-查看/编辑 -->
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-            <Key class="h-5 w-5 text-amber-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">查看/编辑</p>
-            <p class="text-2xl font-bold">{{ viewPermCount }} <span class="text-sm font-normal text-muted-foreground">/ {{ editPermCount }}</span></p>
-          </div>
-        </div>
-      </div>
-      <!-- 统计-管理权限 -->
-      <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-        <div class="flex items-center gap-4 p-5">
-          <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-purple-100">
-            <Shield class="h-5 w-5 text-purple-600" />
-          </div>
-          <div>
-            <p class="text-sm text-muted-foreground">管理权限</p>
-            <p class="text-2xl font-bold">{{ managePermCount }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
+   
 
     <!-- 权限列表 -->
     <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
