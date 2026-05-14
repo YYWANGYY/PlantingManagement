@@ -14,4 +14,8 @@ export default defineConfig({
     port: 5000,
     host: true,
   },
+  preview: {
+    port: 5000,
+    host: true,
+  },
 })

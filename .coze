@@ -7,4 +7,4 @@ run = ["pnpm", "run", "dev"]
 
 [deploy]
 build = ["pnpm", "run", "deploy:build"]
-run = ["pnpm", "run", "preview"]
+run = ["node", "node_modules/vite/bin/vite.js", "preview", "--port", "5000", "--host"]
