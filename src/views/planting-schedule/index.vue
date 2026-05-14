@@ -246,7 +246,9 @@
 
       <!-- 分页 -->
       <div class="flex items-center justify-between px-4 py-3 border-t">
-        <span class="text-sm text-muted-foreground">共 {{ filteredItems.length }} 条</span>
+        <span class="text-sm text-muted-foreground">
+        第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ filteredSchemes.length }}</span> 条记录  
+        </span>
         <div class="flex items-center gap-1">
           <button
             class="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm disabled:opacity-50 disabled:cursor-not-allowed"

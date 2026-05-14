@@ -3,23 +3,12 @@
     <!-- 页面标题 -->
     <div>
       <h1 class="text-2xl font-bold tracking-tight">种植档案</h1>
-      <p class="mt-1 text-sm text-muted-foreground">以地块为维度，查看当前种植数据及执行进度</p>
+      <p class="mt-1 text-sm text-muted-foreground">以地块为维度，查看<span class="font-semibold">当前种植数据</span>及执行进度</p>
     </div>
 
     <!-- 查询条件 -->
     <div class="rounded-lg border bg-card p-4 shadow-sm">
       <div class="flex flex-wrap items-end gap-4">
-        <!-- 年度 -->
-        <div class="flex flex-col gap-1.5">
-          <label class="text-sm font-medium text-muted-foreground">年度</label>
-          <select
-            v-model="filters.year"
-            class="h-9 w-36 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          >
-            <option value="">全部</option>
-            <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}</option>
-          </select>
-        </div>
 
         <!-- 所属单位 -->
         <div class="flex flex-col gap-1.5">
@@ -235,7 +224,7 @@
     <!-- 分页 -->
     <div v-if="totalPages > 1" class="flex items-center justify-between">
       <span class="text-sm text-muted-foreground">
-        共 {{ filteredData.length }} 条记录，第 {{ currentPage }}/{{ totalPages }} 页
+        第 {{ currentPage }} / {{ totalPages }} 页，共 <span class="font-medium">{{ filteredData.length }}</span> 条记录
       </span>
       <div class="flex items-center gap-1">
         <button
