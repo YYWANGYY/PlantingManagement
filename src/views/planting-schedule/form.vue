@@ -337,13 +337,6 @@
             <span class="flex items-center gap-1"><span class="inline-block w-2 h-2 rounded-full bg-green-400"></span> 特有字段</span>
           </div>
         </div>
-        <button
-          class="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90"
-          @click="addFarmingRow"
-        >
-          <Plus class="h-3.5 w-3.5" />
-          添加明细
-        </button>
       </div>
       <div class="rounded-lg border">
         <div class="overflow-x-auto">

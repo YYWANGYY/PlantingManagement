@@ -427,8 +427,12 @@
             <!-- 信息网格 -->
             <div class="grid grid-cols-2 gap-x-8 gap-y-2 text-xs lg:grid-cols-4">
               <div>
-                <span class="text-muted-foreground">作业面积</span>
+                <span class="text-muted-foreground">计划作业面积</span>
                 <p class="font-medium">{{ task.area }}亩</p>
+              </div>
+              <div>
+                <span class="text-muted-foreground">实际作业面积</span>
+                <p class="font-medium">{{ task.actualArea }}亩</p>
               </div>
               <div>
                 <span class="text-muted-foreground">作业负责人</span>
@@ -438,26 +442,30 @@
                 <span class="text-muted-foreground">作业执行人</span>
                 <p class="font-medium">{{ task.executor }}</p>
               </div>
+ 
               <div>
-                <span class="text-muted-foreground">实际完成时间</span>
-                <p class="font-medium">{{ task.actualEndTime || '-' }}</p>
-              </div>
-              <div>
-                <span class="text-muted-foreground">地块</span>
+                <span class="text-muted-foreground">种植单元</span>
                 <p class="font-medium">{{ task.plotName }}（{{ task.plotCode }}）</p>
               </div>
               <div>
-                <span class="text-muted-foreground">农机/设备</span>
-                <p class="font-medium">{{ task.equipment || '-' }}</p>
+                <span class="text-muted-foreground">计划开始日期</span>
+                <p class="font-medium">{{ task.planStartDate }}</p>
               </div>
-              <div>
-                <span class="text-muted-foreground">计划日期</span>
-                <p class="font-medium">{{ task.planDate }}</p>
+               <div>
+                <span class="text-muted-foreground">计划完成日期</span>
+                <p class="font-medium">{{ task.planEndDate }}</p>
+              </div>
+               <div>
+                <span class="text-muted-foreground">实际开始时间</span>
+                <p class="font-medium">{{ task.actualStartDate || '-' }}</p>
+              </div>              <div>
+                <span class="text-muted-foreground">实际完成时间</span>
+                <p class="font-medium">{{ task.actualEndDate || '-' }}</p>
               </div>
             </div>
             <!-- 大田工作图片标注 -->
             <div v-if="task.imageUrl" class="mt-2 text-xs text-muted-foreground/60">
-              大田工作图片
+              
             </div>
           </div>
           <!-- 左侧色条 -->
@@ -581,6 +589,7 @@ interface FarmTask {
   growthStage: string
   process: string
   area: number
+  actualArea: number
   manager: string
   executor: string
   actualEndTime: string
@@ -589,7 +598,10 @@ interface FarmTask {
   equipment: string
   taskStatus: TaskStatus
   imageUrl: string
-  planDate: string
+  planStartDate: string
+  planEndDate: string
+  actualStartDate: string
+  actualEndDate: string
 }
 
 // ==================== 页签状态 ====================
@@ -684,14 +696,14 @@ const allPlans: FarmPlan[] = [
     id: 'P001', planCode: 'ZJ-2025-001', schemeCode: 'FA-2025-001', planName: '五大连池玉米种植计划', org: '五大连池农场',
     cropCategory: '玉米', cropVariety: '先玉335',
     resources: [{ plotCode: 'WDLC-A01', unitCode: '种植单元A01-001', area: 2500 }, { plotCode: 'WDLC-A02', unitCode: '种植单元A02-002', area: 2500 }],
-    assetArea: 5000, planArea: 5000, startDate: '2025-04-20', endDate: '2025-10-15',
-    planManager: '张建国', execManager: '李明远', creator: '系统管理员', createTime: '2025-03-01 09:00',
+    assetArea: 5000, planArea: 5000, startDate: '2026-04-20', endDate: '2026-10-15',
+    planManager: '张建国', execManager: '李明远', creator: '系统管理员', createTime: '2026-03-01 09:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'executing', completedTasks: 8, totalTasks: 12,
     execDetails: [
-      { growthStage: '播种期', process: '播种', step: '精量播种', standard: '株距25cm', start: '2025-04-20', end: '2025-04-25' },
-      { growthStage: '苗期', process: '田间管理', step: '中耕除草', standard: '深度10cm', start: '2025-05-10', end: '2025-05-20' },
-      { growthStage: '拔节期', process: '施肥', step: '追施氮肥', standard: '15kg/亩', start: '2025-06-01', end: '2025-06-10' }
+      { growthStage: '播种期', process: '播种', step: '精量播种', standard: '株距25cm', start: '2026-04-20', end: '2026-04-25' },
+      { growthStage: '苗期', process: '田间管理', step: '中耕除草', standard: '深度10cm', start: '2026-05-10', end: '2026-05-20' },
+      { growthStage: '拔节期', process: '施肥', step: '追施氮肥', standard: '15kg/亩', start: '2026-06-01', end: '2026-06-10' }
     ],
     materialPlan: [
       { category: '化肥', type: '尿素', amount: '75000', unit: 'kg', growthStage: '拔节期' },
@@ -702,13 +714,13 @@ const allPlans: FarmPlan[] = [
     id: 'P002', planCode: 'ZJ-2025-002', schemeCode: 'FA-2025-002', planName: '五大连池大豆种植计划', org: '五大连池农场',
     cropCategory: '大豆', cropVariety: '黑河43',
     resources: [{ plotCode: 'WDLC-B01', unitCode: '种植单元B01-001', area: 3000 }, { plotCode: 'WDLC-B02', unitCode: '种植单元B02-001', area: 2000 }],
-    assetArea: 5000, planArea: 5000, startDate: '2025-05-01', endDate: '2025-09-30',
-    planManager: '赵志强', execManager: '孙伟', creator: '系统管理员', createTime: '2025-03-05 10:00',
+    assetArea: 5000, planArea: 5000, startDate: '2026-05-01', endDate: '2026-09-30',
+    planManager: '赵志强', execManager: '孙伟', creator: '系统管理员', createTime: '2026-03-05 10:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'partial_done', completedTasks: 6, totalTasks: 10,
     execDetails: [
-      { growthStage: '播种期', process: '播种', step: '机械播种', standard: '行距45cm', start: '2025-05-01', end: '2025-05-05' },
-      { growthStage: '花期', process: '植保', step: '喷施叶面肥', standard: '2kg/亩', start: '2025-07-01', end: '2025-07-10' }
+      { growthStage: '播种期', process: '播种', step: '机械播种', standard: '行距45cm', start: '2026-05-01', end: '2026-05-05' },
+      { growthStage: '花期', process: '植保', step: '喷施叶面肥', standard: '2kg/亩', start: '2026-07-01', end: '2026-07-10' }
     ],
     materialPlan: [
       { category: '化肥', type: '磷酸二铵', amount: '50000', unit: 'kg', growthStage: '播种期' }
@@ -718,13 +730,13 @@ const allPlans: FarmPlan[] = [
     id: 'P003', planCode: 'ZJ-2025-003', schemeCode: 'FA-2025-003', planName: '双城水稻种植计划', org: '双城农场',
     cropCategory: '水稻', cropVariety: '龙粳31',
     resources: [{ plotCode: 'SC-C01', unitCode: '种植单元C01-001', area: 4000 }],
-    assetArea: 4000, planArea: 4000, startDate: '2025-04-10', endDate: '2025-10-20',
-    planManager: '刘海涛', execManager: '陈刚', creator: '系统管理员', createTime: '2025-03-10 11:00',
+    assetArea: 4000, planArea: 4000, startDate: '2026-04-10', endDate: '2026-10-20',
+    planManager: '刘海涛', execManager: '陈刚', creator: '系统管理员', createTime: '2026-03-10 11:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'all_done', completedTasks: 14, totalTasks: 14,
     execDetails: [
-      { growthStage: '播种期', process: '育秧', step: '温室育秧', standard: '秧龄30天', start: '2025-04-10', end: '2025-05-10' },
-      { growthStage: '分蘖期', process: '田间管理', step: '晒田控蘖', standard: '晒田7天', start: '2025-06-15', end: '2025-06-22' }
+      { growthStage: '播种期', process: '育秧', step: '温室育秧', standard: '秧龄30天', start: '2026-04-10', end: '2026-05-10' },
+      { growthStage: '分蘖期', process: '田间管理', step: '晒田控蘖', standard: '晒田7天', start: '2026-06-15', end: '2026-06-22' }
     ],
     materialPlan: [
       { category: '化肥', type: '复合肥', amount: '80000', unit: 'kg', growthStage: '分蘖期' }
@@ -734,12 +746,12 @@ const allPlans: FarmPlan[] = [
     id: 'P004', planCode: 'ZJ-2025-004', schemeCode: 'FA-2025-004', planName: '法库花生种植计划', org: '法库农场',
     cropCategory: '花生', cropVariety: '花育33',
     resources: [{ plotCode: 'FK-D01', unitCode: '种植单元D01-001', area: 2000 }],
-    assetArea: 2000, planArea: 2000, startDate: '2025-05-10', endDate: '2025-09-25',
-    planManager: '王永亮', execManager: '周鹏', creator: '系统管理员', createTime: '2025-04-01 09:00',
+    assetArea: 2000, planArea: 2000, startDate: '2026-05-10', endDate: '2026-09-25',
+    planManager: '王永亮', execManager: '周鹏', creator: '系统管理员', createTime: '2026-04-01 09:00',
     approver: '', approvalStatus: '未审批', remark: '待审批',
     progressStatus: 'not_effective', completedTasks: 0, totalTasks: 8,
     execDetails: [
-      { growthStage: '播种期', process: '播种', step: '起垄播种', standard: '垄距40cm', start: '2025-05-10', end: '2025-05-15' }
+      { growthStage: '播种期', process: '播种', step: '起垄播种', standard: '垄距40cm', start: '2026-05-10', end: '2026-05-15' }
     ],
     materialPlan: []
   },
@@ -747,12 +759,12 @@ const allPlans: FarmPlan[] = [
     id: 'P005', planCode: 'ZJ-2025-005', schemeCode: 'FA-2025-005', planName: '双城马铃薯种植计划', org: '双城农场',
     cropCategory: '马铃薯', cropVariety: '大西洋',
     resources: [{ plotCode: 'SC-E01', unitCode: '种植单元E01-001', area: 1500 }],
-    assetArea: 1500, planArea: 1500, startDate: '2025-04-15', endDate: '2025-08-30',
-    planManager: '马强', execManager: '于涛', creator: '系统管理员', createTime: '2025-03-15 14:00',
+    assetArea: 1500, planArea: 1500, startDate: '2026-04-15', endDate: '2026-08-30',
+    planManager: '马强', execManager: '于涛', creator: '系统管理员', createTime: '2026-03-15 14:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'archived', completedTasks: 10, totalTasks: 10,
     execDetails: [
-      { growthStage: '播种期', process: '播种', step: '切块播种', standard: '株距25cm', start: '2025-04-15', end: '2025-04-20' }
+      { growthStage: '播种期', process: '播种', step: '切块播种', standard: '株距25cm', start: '2026-04-15', end: '2026-04-20' }
     ],
     materialPlan: []
   },
@@ -760,8 +772,8 @@ const allPlans: FarmPlan[] = [
     id: 'P006', planCode: 'ZJ-2025-006', schemeCode: 'FA-2025-006', planName: '五大连池小麦种植计划', org: '五大连池农场',
     cropCategory: '小麦', cropVariety: '龙麦35',
     resources: [{ plotCode: 'WDLC-F01', unitCode: '种植单元F01-001', area: 3000 }],
-    assetArea: 3000, planArea: 3000, startDate: '2025-03-20', endDate: '2025-08-10',
-    planManager: '钱明', execManager: '吴磊', creator: '系统管理员', createTime: '2025-02-20 10:00',
+    assetArea: 3000, planArea: 3000, startDate: '2026-03-20', endDate: '2026-08-10',
+    planManager: '钱明', execManager: '吴磊', creator: '系统管理员', createTime: '2026-02-20 10:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'voided', completedTasks: 0, totalTasks: 8,
     execDetails: [],
@@ -771,12 +783,12 @@ const allPlans: FarmPlan[] = [
     id: 'P007', planCode: 'ZJ-2025-007', schemeCode: 'FA-2025-007', planName: '法库大豆种植计划', org: '法库农场',
     cropCategory: '大豆', cropVariety: '辽豆15',
     resources: [{ plotCode: 'FK-G01', unitCode: '种植单元G01-001', area: 3500 }],
-    assetArea: 3500, planArea: 3500, startDate: '2025-05-05', endDate: '2025-10-05',
-    planManager: '郑伟', execManager: '黄海', creator: '系统管理员', createTime: '2025-04-05 11:00',
+    assetArea: 3500, planArea: 3500, startDate: '2026-05-05', endDate: '2026-10-05',
+    planManager: '郑伟', execManager: '黄海', creator: '系统管理员', createTime: '2026-04-05 11:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'not_started', completedTasks: 0, totalTasks: 10,
     execDetails: [
-      { growthStage: '播种期', process: '播种', step: '精量播种', standard: '行距50cm', start: '2025-05-05', end: '2025-05-10' }
+      { growthStage: '播种期', process: '播种', step: '精量播种', standard: '行距50cm', start: '2026-05-05', end: '2026-05-10' }
     ],
     materialPlan: []
   },
@@ -784,13 +796,13 @@ const allPlans: FarmPlan[] = [
     id: 'P008', planCode: 'ZJ-2025-008', schemeCode: 'FA-2025-008', planName: '双城玉米种植计划', org: '双城农场',
     cropCategory: '玉米', cropVariety: '郑单958',
     resources: [{ plotCode: 'SC-H01', unitCode: '种植单元H01-001', area: 4500 }],
-    assetArea: 4500, planArea: 4500, startDate: '2025-04-25', endDate: '2025-10-20',
-    planManager: '冯磊', execManager: '蒋华', creator: '系统管理员', createTime: '2025-03-20 09:00',
+    assetArea: 4500, planArea: 4500, startDate: '2026-04-25', endDate: '2026-10-20',
+    planManager: '冯磊', execManager: '蒋华', creator: '系统管理员', createTime: '2026-03-20 09:00',
     approver: '王总', approvalStatus: '已审批', remark: '',
     progressStatus: 'executing', completedTasks: 5, totalTasks: 12,
     execDetails: [
-      { growthStage: '播种期', process: '播种', step: '机械播种', standard: '株距22cm', start: '2025-04-25', end: '2025-04-30' },
-      { growthStage: '苗期', process: '田间管理', step: '间苗定苗', standard: '留苗密度4500株/亩', start: '2025-05-15', end: '2025-05-20' }
+      { growthStage: '播种期', process: '播种', step: '机械播种', standard: '株距22cm', start: '2026-04-25', end: '2026-04-30' },
+      { growthStage: '苗期', process: '田间管理', step: '间苗定苗', standard: '留苗密度4500株/亩', start: '2026-05-15', end: '2026-05-20' }
     ],
     materialPlan: [
       { category: '化肥', type: '尿素', amount: '67500', unit: 'kg', growthStage: '拔节期' }
@@ -961,18 +973,18 @@ function taskStatusLabel(status: TaskStatus): string {
 
 // 模拟任务数据
 const allTasks: FarmTask[] = [
-  { id: 'T001', step: '精量播种', growthStage: '播种期', process: '播种', area: 5000, manager: '李明远', executor: '张三', actualEndTime: '', plotName: '龙泉分场A区', plotCode: 'WDLC-A01', equipment: '约翰迪尔播种机', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm01/400/200', planDate: '2025-04-20' },
-  { id: 'T002', step: '中耕除草', growthStage: '苗期', process: '田间管理', area: 5000, manager: '李明远', executor: '李四', actualEndTime: '', plotName: '龙泉分场A区', plotCode: 'WDLC-A01', equipment: '中耕机', taskStatus: 'executing', imageUrl: 'https://picsum.photos/seed/farm02/400/200', planDate: '2025-05-10' },
-  { id: 'T003', step: '追施氮肥', growthStage: '拔节期', process: '施肥', area: 5000, manager: '李明远', executor: '王五', actualEndTime: '', plotName: '龙泉分场A区', plotCode: 'WDLC-A01', equipment: '撒肥机', taskStatus: 'issued', imageUrl: '', planDate: '2025-06-01' },
-  { id: 'T004', step: '机械播种', growthStage: '播种期', process: '播种', area: 5000, manager: '孙伟', executor: '赵六', actualEndTime: '2025-05-05', plotName: '龙泉分场B区', plotCode: 'WDLC-B01', equipment: '大豆播种机', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm03/400/200', planDate: '2025-05-01' },
-  { id: 'T005', step: '喷施叶面肥', growthStage: '花期', process: '植保', area: 5000, manager: '孙伟', executor: '钱七', actualEndTime: '', plotName: '龙泉分场B区', plotCode: 'WDLC-B01', equipment: '植保无人机', taskStatus: 'executing', imageUrl: 'https://picsum.photos/seed/farm04/400/200', planDate: '2025-07-01' },
-  { id: 'T006', step: '温室育秧', growthStage: '播种期', process: '播种', area: 4000, manager: '陈刚', executor: '孙八', actualEndTime: '2025-05-08', plotName: '双城农场C区', plotCode: 'SC-C01', equipment: '育秧流水线', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm05/400/200', planDate: '2025-04-10' },
-  { id: 'T007', step: '晒田控蘖', growthStage: '分蘖期', process: '田间管理', area: 4000, manager: '陈刚', executor: '周九', actualEndTime: '2025-06-22', plotName: '双城农场C区', plotCode: 'SC-C01', equipment: '-', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm06/400/200', planDate: '2025-06-15' },
-  { id: 'T008', step: '起垄播种', growthStage: '播种期', process: '播种', area: 2000, manager: '周鹏', executor: '吴十', actualEndTime: '', plotName: '法库农场D区', plotCode: 'FK-D01', equipment: '起垄播种一体机', taskStatus: 'pending_issue', imageUrl: '', planDate: '2025-05-10' },
-  { id: 'T009', step: '间苗定苗', growthStage: '苗期', process: '田间管理', area: 4500, manager: '蒋华', executor: '郑一', actualEndTime: '', plotName: '双城农场H区', plotCode: 'SC-H01', equipment: '-', taskStatus: 'executing', imageUrl: 'https://picsum.photos/seed/farm07/400/200', planDate: '2025-05-15' },
-  { id: 'T010', step: '追施氮肥', growthStage: '拔节期', process: '施肥', area: 4500, manager: '蒋华', executor: '冯二', actualEndTime: '', plotName: '双城农场H区', plotCode: 'SC-H01', equipment: '撒肥车', taskStatus: 'issued', imageUrl: '', planDate: '2025-06-05' },
-  { id: 'T011', step: '收割作业', growthStage: '成熟期', process: '收获', area: 3000, manager: '吴磊', executor: '何三', actualEndTime: '', plotName: '五大连池F区', plotCode: 'WDLC-F01', equipment: '-', taskStatus: 'cancelled', imageUrl: '', planDate: '2025-07-20' },
-  { id: 'T012', step: '精量播种', growthStage: '播种期', process: '播种', area: 3500, manager: '黄海', executor: '施四', actualEndTime: '', plotName: '法库农场G区', plotCode: 'FK-G01', equipment: '大豆精播机', taskStatus: 'pending_issue', imageUrl: '', planDate: '2025-05-05' }
+  { id: 'T001', step: '精量播种', growthStage: '播种期', process: '播种', area: 5000,actualArea:5100, manager: '李明远', executor: '张三', actualEndTime: '', plotName: '龙泉分场A区', plotCode: 'WDLC-A01', equipment: '约翰迪尔播种机', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm01/400/200', planStartDate: '2026-04-20' , planEndDate: '2026-04-30' ,actualStartDate:'2026-04-20',actualEndDate:'2026-04-30'},
+  { id: 'T002', step: '中耕除草', growthStage: '苗期', process: '田间管理', area: 5000,actualArea:0, manager: '李明远', executor: '李四', actualEndTime: '', plotName: '龙泉分场A区', plotCode: 'WDLC-A01', equipment: '中耕机', taskStatus: 'executing', imageUrl: 'https://picsum.photos/seed/farm02/400/200', planStartDate: '2026-05-10' , planEndDate: '2026-05-15' ,actualStartDate:'2026-05-11',actualEndDate:''},
+  { id: 'T003', step: '追施氮肥', growthStage: '拔节期', process: '施肥', area: 5000,actualArea:0, manager: '李明远', executor: '王五', actualEndTime: '', plotName: '龙泉分场A区', plotCode: 'WDLC-A01', equipment: '撒肥机', taskStatus: 'issued', imageUrl: '', planStartDate: '2026-06-01', planEndDate: '2026-06-10' ,actualStartDate:'',actualEndDate:''},
+  { id: 'T004', step: '机械播种', growthStage: '播种期', process: '播种', area: 5000,actualArea:5100, manager: '孙伟', executor: '赵六', actualEndTime: '2025-05-05', plotName: '龙泉分场B区', plotCode: 'WDLC-B01', equipment: '大豆播种机', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm03/400/200', planStartDate: '2026-05-01' ,planEndDate:'2026-05-09',actualStartDate:'2026-05-01',actualEndDate:'2026-05-09'},
+  { id: 'T005', step: '喷施叶面肥', growthStage: '花期', process: '植保', area: 5000,actualArea:0, manager: '孙伟', executor: '钱七', actualEndTime: '', plotName: '龙泉分场B区', plotCode: 'WDLC-B01', equipment: '植保无人机', taskStatus: 'executing', imageUrl: 'https://picsum.photos/seed/farm04/400/200', planStartDate: '2026-07-01',planEndDate:'2026-07-10'  ,actualStartDate:'',actualEndDate:''},
+  { id: 'T006', step: '温室育秧', growthStage: '播种期', process: '播种', area: 4000,actualArea:3800, manager: '陈刚', executor: '孙八', actualEndTime: '2025-05-08', plotName: '双城农场C区', plotCode: 'SC-C01', equipment: '育秧流水线', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm05/400/200', planStartDate: '2026-04-10',planEndDate:'2026-04-30'  ,actualStartDate:'2026-04-15',actualEndDate:'2026-04-30'  },
+  { id: 'T007', step: '晒田控蘖', growthStage: '分蘖期', process: '田间管理', area: 4000,actualArea:4100, manager: '陈刚', executor: '周九', actualEndTime: '2025-06-22', plotName: '双城农场C区', plotCode: 'SC-C01', equipment: '-', taskStatus: 'completed', imageUrl: 'https://picsum.photos/seed/farm06/400/200', planStartDate: '2026-04-15',planEndDate:'2026-04-30'  ,actualStartDate:'2026-04-15',actualEndDate:'2026-04-30' },
+  { id: 'T008', step: '起垄播种', growthStage: '播种期', process: '播种', area: 2000,actualArea:0, manager: '周鹏', executor: '吴十', actualEndTime: '', plotName: '法库农场D区', plotCode: 'FK-D01', equipment: '起垄播种一体机', taskStatus: 'pending_issue', imageUrl: '', planStartDate: '2026-05-10' ,planEndDate:'2026-05-30'  ,actualStartDate:'',actualEndDate:''},
+  { id: 'T009', step: '间苗定苗', growthStage: '苗期', process: '田间管理', area: 4500,actualArea:0, manager: '蒋华', executor: '郑一', actualEndTime: '', plotName: '双城农场H区', plotCode: 'SC-H01', equipment: '-', taskStatus: 'executing', imageUrl: 'https://picsum.photos/seed/farm07/400/200', planStartDate: '2026-05-15',planEndDate:'2026-05-20'  ,actualStartDate:'2026-05-14',actualEndDate:'' },
+  { id: 'T010', step: '追施氮肥', growthStage: '拔节期', process: '施肥', area: 4500,actualArea:0, manager: '蒋华', executor: '冯二', actualEndTime: '', plotName: '双城农场H区', plotCode: 'SC-H01', equipment: '撒肥车', taskStatus: 'issued', imageUrl: '', planStartDate: '2026-06-05' ,planEndDate:'2026-06-10'  ,actualStartDate:'',actualEndDate:''},
+  { id: 'T011', step: '收割作业', growthStage: '成熟期', process: '收获', area: 3000,actualArea:0, manager: '吴磊', executor: '何三', actualEndTime: '', plotName: '五大连池F区', plotCode: 'WDLC-F01', equipment: '-', taskStatus: 'cancelled', imageUrl: '', planStartDate: '2026-07-20' ,planEndDate:'2026-07-30'  ,actualStartDate:'',actualEndDate:''},
+  { id: 'T012', step: '精量播种', growthStage: '播种期', process: '播种', area: 3500,actualArea:0, manager: '黄海', executor: '施四', actualEndTime: '', plotName: '法库农场G区', plotCode: 'FK-G01', equipment: '大豆精播机', taskStatus: 'pending_issue', imageUrl: '', planStartDate: '2026-05-05' ,planEndDate:'2026-05-30'  ,actualStartDate:'',actualEndDate:''}
 ]
 
 const filteredTasks = computed(() => {
@@ -980,8 +992,8 @@ const filteredTasks = computed(() => {
     if (taskFilters.value.growthStages.length > 0 && !taskFilters.value.growthStages.includes(t.growthStage)) return false
     if (taskFilters.value.processes.length > 0 && !taskFilters.value.processes.includes(t.process)) return false
     if (taskFilters.value.steps.length > 0 && !taskFilters.value.steps.includes(t.step)) return false
-    if (taskFilters.value.startDate && t.planDate < taskFilters.value.startDate) return false
-    if (taskFilters.value.endDate && t.planDate > taskFilters.value.endDate) return false
+    if (taskFilters.value.startDate && t.planEndDate < taskFilters.value.startDate) return false
+    if (taskFilters.value.endDate && t.planStartDate > taskFilters.value.endDate) return false
     return true
   })
 })
