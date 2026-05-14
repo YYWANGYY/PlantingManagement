@@ -614,7 +614,7 @@
                                 />
                                 {{ park.name }}
                               </button>
-                              <!-- 四级：分场/地块编号 -->
+                              <!-- 四级：分场/分园编号 -->
                               <div v-if="expandedNodes.includes(park.id)" class="ml-4">
                                 <button
                                   v-for="branch in park.children"
@@ -686,20 +686,20 @@
           <!-- 右侧：地块列表 -->
           <div class="w-72 border-l flex flex-col bg-white">
             <div class="px-4 py-3 border-b">
-              <span class="text-sm font-semibold">选择资源地块</span>
+              <span class="text-sm font-semibold">选择种植单元</span>
             </div>
             <!-- 搜索 -->
             <div class="px-4 py-2 border-b space-y-2">
               <input
                 v-model="plotNameSearch"
                 type="text"
-                placeholder="请输入地块名称"
+                placeholder="请输入种植单元名称"
                 class="h-7 w-full rounded border border-input bg-transparent px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
               />
               <input
                 v-model="plotCodeSearch"
                 type="text"
-                placeholder="请输入地块编号"
+                placeholder="请输入种植单元编码"
                 class="h-7 w-full rounded border border-input bg-transparent px-2 py-0.5 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
               />
               <div class="flex gap-2">
@@ -761,7 +761,7 @@
         <!-- 底部操作 -->
         <div class="flex items-center justify-between border-t px-6 py-3">
           <span class="text-sm text-muted-foreground">
-            已选择 <span class="font-medium text-foreground">{{ tempSelectedPlots.length }}</span> 个地块，
+            已选择 <span class="font-medium text-foreground">{{ tempSelectedPlots.length }}</span> 个种植单元，
             资产面积合计 <span class="font-medium text-foreground">{{ tempAssetArea }}</span> 亩
           </span>
           <div class="flex items-center gap-2">
@@ -876,21 +876,21 @@ interface PlotItem {
 }
 
 const plotData: PlotItem[] = [
-  { id: 'DK001', code: '京号0077', name: '良乡1号地块', area: 120, type: '旱地', location: '良乡园区东区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500001', parentCode: '京号0077' },
-  { id: 'DK002', code: '京号0077', name: '良乡2号地块', area: 85, type: '水田', location: '良乡园区西区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500002', parentCode: '京号0077' },
-  { id: 'DK003', code: '京号0077', name: '良乡3号地块', area: 95, type: '旱地', location: '良乡园区北区', unit: '良乡园区', status: '不可用', uniqueCode: '01020001011200500003', parentCode: '京号0077' },
-  { id: 'DK004', code: '京号0077', name: '良乡4号地块', area: 60, type: '水田', location: '良乡园区南区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500004', parentCode: '京号0077' },
-  { id: 'DK005', code: '京号0078', name: '长阳1号地块', area: 200, type: '旱地', location: '长阳分场中心', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500005', parentCode: '京号0078' },
-  { id: 'DK006', code: '京号0078', name: '长阳2号地块', area: 150, type: '水田', location: '长阳分场南区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500006', parentCode: '京号0078' },
-  { id: 'DK007', code: '京号0078', name: '长阳3号地块', area: 90, type: '旱地', location: '长阳分场北区', unit: '良乡园区', status: '不可用', uniqueCode: '01020001011200500007', parentCode: '京号0078' },
-  { id: 'DK008', code: '京号0079', name: '北潞上1号地块', area: 110, type: '旱地', location: '北潞上分场东区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500008', parentCode: '京号0079' },
-  { id: 'DK009', code: '京号0079', name: '北潞上2号地块', area: 75, type: '设施大棚', location: '北潞上分场西区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500009', parentCode: '京号0079' },
-  { id: 'DK010', code: '津号0001', name: '天津1号地块', area: 180, type: '旱地', location: '天津园区中心', unit: '天津园区', status: '可用', uniqueCode: '01020001021200500001', parentCode: '津号0001' },
-  { id: 'DK011', code: '津号0001', name: '天津2号地块', area: 130, type: '水田', location: '天津园区南区', unit: '天津园区', status: '可用', uniqueCode: '01020001021200500002', parentCode: '津号0001' },
-  { id: 'DK012', code: '冀号0010', name: '唐山1号地块', area: 160, type: '旱地', location: '唐山园区东区', unit: '唐山园区', status: '可用', uniqueCode: '01020001031200500001', parentCode: '冀号0010' },
-  { id: 'DK013', code: '冀号0010', name: '唐山2号地块', area: 100, type: '水田', location: '唐山园区西区', unit: '唐山园区', status: '不可用', uniqueCode: '01020001031200500002', parentCode: '冀号0010' },
-  { id: 'DK014', code: '冀号0011', name: '石家庄1号地块', area: 140, type: '旱地', location: '石家庄农场中心', unit: '石家庄农场', status: '可用', uniqueCode: '01020001031200500003', parentCode: '冀号0011' },
-  { id: 'DK015', code: '晋号0005', name: '太原1号地块', area: 170, type: '旱地', location: '太原农场北区', unit: '太原农场', status: '可用', uniqueCode: '01020001041200500001', parentCode: '晋号0005' },
+  { id: 'DK001', code: '京号0077', name: '良乡1号种植单元', area: 120, type: '旱地', location: '良乡园区东区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500001', parentCode: '京号0077' },
+  { id: 'DK002', code: '京号0077', name: '良乡2号种植单元', area: 85, type: '水田', location: '良乡园区西区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500002', parentCode: '京号0077' },
+  { id: 'DK003', code: '京号0077', name: '良乡3号种植单元', area: 95, type: '旱地', location: '良乡园区北区', unit: '良乡园区', status: '不可用', uniqueCode: '01020001011200500003', parentCode: '京号0077' },
+  { id: 'DK004', code: '京号0077', name: '良乡4号种植单元', area: 60, type: '水田', location: '良乡园区南区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500004', parentCode: '京号0077' },
+  { id: 'DK005', code: '京号0078', name: '长阳1号种植单元', area: 200, type: '旱地', location: '长阳分场中心', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500005', parentCode: '京号0078' },
+  { id: 'DK006', code: '京号0078', name: '长阳2号种植单元', area: 150, type: '水田', location: '长阳分场南区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500006', parentCode: '京号0078' },
+  { id: 'DK007', code: '京号0078', name: '长阳3号种植单元', area: 90, type: '旱地', location: '长阳分场北区', unit: '良乡园区', status: '不可用', uniqueCode: '01020001011200500007', parentCode: '京号0078' },
+  { id: 'DK008', code: '京号0079', name: '北潞上1号种植单元', area: 110, type: '旱地', location: '北潞上分场东区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500008', parentCode: '京号0079' },
+  { id: 'DK009', code: '京号0079', name: '北潞上2号种植单元', area: 75, type: '设施大棚', location: '北潞上分场西区', unit: '良乡园区', status: '可用', uniqueCode: '01020001011200500009', parentCode: '京号0079' },
+  { id: 'DK010', code: '津号0001', name: '天津1号种植单元', area: 180, type: '旱地', location: '天津园区中心', unit: '天津园区', status: '可用', uniqueCode: '01020001021200500001', parentCode: '津号0001' },
+  { id: 'DK011', code: '津号0001', name: '天津2号种植单元', area: 130, type: '水田', location: '天津园区南区', unit: '天津园区', status: '可用', uniqueCode: '01020001021200500002', parentCode: '津号0001' },
+  { id: 'DK012', code: '冀号0010', name: '唐山1号种植单元', area: 160, type: '旱地', location: '唐山园区东区', unit: '唐山园区', status: '可用', uniqueCode: '01020001031200500001', parentCode: '冀号0010' },
+  { id: 'DK013', code: '冀号0010', name: '唐山2号地植单元', area: 100, type: '水田', location: '唐山园区西区', unit: '唐山园区', status: '不可用', uniqueCode: '01020001031200500002', parentCode: '冀号0010' },
+  { id: 'DK014', code: '冀号0011', name: '石家庄1号种植单元', area: 140, type: '旱地', location: '石家庄农场中心', unit: '石家庄农场', status: '可用', uniqueCode: '01020001031200500003', parentCode: '冀号0011' },
+  { id: 'DK015', code: '晋号0005', name: '太原1号种植单元', area: 170, type: '旱地', location: '太原农场北区', unit: '太原农场', status: '可用', uniqueCode: '01020001041200500001', parentCode: '晋号0005' },
 ]
 
 const showPlotDialog = ref(false)

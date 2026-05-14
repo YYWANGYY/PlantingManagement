@@ -33,13 +33,19 @@
             <option v-for="org in orgOptions" :key="org.value" :value="org.value">{{ org.label }}</option>
           </select>
         </div>
-        <div class="space-y-1">
-          <label class="text-xs font-medium text-muted-foreground">日期 </label>
-          <input
-            v-model="planFilters.date"
-            type="date"
-            class="h-9 w-40 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-          />
+        <div class="flex items-end gap-2">
+          <div class="space-y-1">
+            <label class="text-xs font-medium text-muted-foreground">年份 </label>
+            <select v-model="selectedYear" class="h-9 w-24 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option v-for="y in yearOptions" :key="y" :value="y">{{ y }}年</option>
+            </select>
+          </div>
+          <div class="space-y-1">
+            <label class="text-xs font-medium text-muted-foreground">月份 </label>
+            <select v-model="selectedMonth" class="h-9 w-24 rounded-md border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30">
+              <option v-for="m in 12" :key="m" :value="m">{{ m }}月</option>
+            </select>
+          </div>
         </div>
         <button class="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90" @click="resetPlanFilters">重置</button>
       </div>
@@ -593,12 +599,22 @@ const activeMainTab = ref<'plan' | 'task'>('plan')
 const planViewMode = ref<'calendar' | 'card'>('calendar')
 const detailDialogVisible = ref(false)
 const selectedPlan = ref<FarmPlan | null>(null)
-const currentYear = ref(2025)
-const currentMonth = ref(5)
+const currentYear = computed(() => selectedYear.value)
+const currentMonth = computed(() => selectedMonth.value)
+const selectedYear = ref(new Date().getFullYear())
+const selectedMonth = ref(new Date().getMonth() + 1)
+
+const yearOptions = computed(() => {
+  const current = new Date().getFullYear()
+  const years: number[] = []
+  for (let y = current + 1; y >= current - 5; y--) {
+    years.push(y)
+  }
+  return years
+})
 
 const planFilters = ref({
   org: '',
-  date: ''
 })
 
 const weekDays = ['一', '二', '三', '四', '五', '六', '日']
@@ -789,10 +805,6 @@ const filteredPlans = computed(() => {
       const orgLabel = orgOptions.find(o => o.value === planFilters.value.org)?.label
       if (orgLabel && !p.org.includes(orgLabel.replace(/区域公司$/, ''))) return false
     }
-    if (planFilters.value.date) {
-      const d = planFilters.value.date
-      if (p.startDate > d && p.endDate < d) return false
-    }
     return true
   })
 })
@@ -849,25 +861,27 @@ const calendarCells = computed<CalendarCell[]>(() => {
 })
 
 function prevMonth() {
-  if (currentMonth.value === 1) {
-    currentMonth.value = 12
-    currentYear.value--
+  if (selectedMonth.value === 1) {
+    selectedMonth.value = 12
+    selectedYear.value--
   } else {
-    currentMonth.value--
+    selectedMonth.value--
   }
 }
 
 function nextMonth() {
-  if (currentMonth.value === 12) {
-    currentMonth.value = 1
-    currentYear.value++
+  if (selectedMonth.value === 12) {
+    selectedMonth.value = 1
+    selectedYear.value++
   } else {
-    currentMonth.value++
+    selectedMonth.value++
   }
 }
 
 function resetPlanFilters() {
-  planFilters.value = { org: '', date: '' }
+  planFilters.value = { org: '' }
+  selectedYear.value = new Date().getFullYear()
+  selectedMonth.value = new Date().getMonth() + 1
 }
 
 function openPlanDetail(plan: FarmPlan) {
